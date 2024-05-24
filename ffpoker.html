@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fantasy Football Texas Hold'em</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        .player-info, .team-info {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid black;
+            display: inline-block;
+            width: 200px;
+            text-align: left;
+        }
+        .action-buttons button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fantasy Football Texas Hold'em</h1>
+
+    <div id="players-section">
+        <h2>Players' Hands</h2>
+    </div>
+
+    <div id="team-info" class="team-info">
+        <h2>Teams Drawn</h2>
+        <ul id="teams-drawn"></ul>
+    </div>
+
+    <div>
+
+        <button id="startGame">Start Game</button>
+
+    </div>
+
+    <div id="player-actions" class="action-buttons"></div>
+
+    <div id="results">
+        <h2>Results</h2>
+        <p id="final-score"></p>
+    </div>
+
+    <div id="game-log">
+
+    </div>
+
+
+    <script src="app.js"></script>
+</body>
+</html>
