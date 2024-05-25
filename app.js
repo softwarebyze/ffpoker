@@ -24,9 +24,10 @@ let activePlayers = [];
 let currentBet = 10;
 const initialChips = 50;
 const initialBet = 10;
-const betIncrease = 10;
+let betIncrease = 10;
 let actions = new Array(numPlayers).fill(false);
 let bettingPhase = 1;
+let startingPlayer = 0;
 
 function startGame() {
     players = [];
@@ -61,13 +62,19 @@ function updatePlayerActions() {
     const playerActions = document.getElementById('player-actions');
     if (currentPlayer < players.length && players[currentPlayer].inGame) {
         playerActions.innerHTML = `<h3>Player ${players[currentPlayer].id}'s Turn</h3>`;
+        if (players[currentPlayer].bet == currentBet) {
+            playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
+        }
+        else {
+            playerActions.innerHTML += `<button onclick="playerCall()">Call</button>`;
+        }
         playerActions.innerHTML += `
-            <button onclick="playerCheck()">Check</button>
-            <button onclick="playerCall()">Call</button>
-            <button onclick="playerRaise()">Raise</button>
+            <button onclick="toggleRaise()">Raise</button>
             <button onclick="playerFold()">Fold</button>
         `;
+        updateRaiseBar();
     }
+    updatePlayerInfo()
 }
 
 function playerCheck() {
@@ -78,6 +85,7 @@ function playerCheck() {
         } else {
             bettingPhase++;
             drawTeam();
+            resetPlayer();
         }
     } else {
         nextPlayer();
@@ -101,6 +109,7 @@ function playerCall() {
         } else {
             bettingPhase++;
             drawTeam();
+            resetPlayer();
         }
     } else {
         nextPlayer();
@@ -108,8 +117,19 @@ function playerCall() {
     logGameState();
 }
 
+function toggleRaise() {
+    const raiseDiv = document.getElementById("raiseDiv");
+    if(raiseDiv.style.display === "none") {
+        raiseDiv.style.display = "initial";
+    }
+    else {
+        raiseDiv.style.display = "none";
+    }
+}
+
 function playerRaise() {
     const player = players[currentPlayer];
+    betIncrease = document.getElementById('raiseRange').value - currentBet;
     const raiseAmount = currentBet + betIncrease - player.bet;
 
     if (player.chips >= raiseAmount) {
@@ -118,18 +138,43 @@ function playerRaise() {
         pot += raiseAmount;
         currentBet += betIncrease;
         actions.fill(false);
+        fillFolded();
         actions[currentPlayer] = true;
+        updateRaiseBar();
+        toggleRaise();
     }
     nextPlayer();
     logGameState();
 }
 
+function updateRaiseAmount() {
+    const raiseAmount = document.getElementById('raiseAmount');
+    const desRaise = document.getElementById('raiseRange').value;
+    raiseAmount.textContent = desRaise;
+}
+
+function updateRaiseBar() {
+    const maxRaise = players[currentPlayer].chips + players[currentPlayer].bet;
+    document.getElementById("raiseRange").max = maxRaise;
+    document.getElementById("raiseRange").min = currentBet + 1;
+    document.getElementById("raiseRange").value = currentBet + 1;
+    document.getElementById("raiseAmount").innerHTML = currentBet + 1;
+}
+
 function playerFold() {
     players[currentPlayer].inGame = false;
     activePlayers = activePlayers.filter(index => index !== currentPlayer);
-    actions[currentPlayer] = false;
+    actions[currentPlayer] = true;
     if (activePlayers.length === 1) {
         revealScores();
+    } else if (actions.every(a => a)) {
+        if (bettingPhase === 3 || drawnTeams.length === 2) {
+            revealScores();
+        } else {
+            bettingPhase++;
+            drawTeam();
+            resetPlayer();
+        }
     } else {
         nextPlayer();
     }
@@ -145,11 +190,21 @@ function nextPlayer() {
     }
 }
 
+function resetPlayer() {
+    currentPlayer = startingPlayer;
+    if (!players[currentPlayer].inGame) {
+        nextPlayer();
+    } else {
+        updatePlayerActions();
+    }
+}
+
 function drawTeam() {
     const team = teams[Math.floor(Math.random() * teams.length)];
     drawnTeams.push(team);
     document.getElementById('teams-drawn').innerHTML += `<li>${team}</li>`;
     actions.fill(false);
+    fillFolded();
     if (drawnTeams.length < 2) {
         updatePlayerActions();
     } else if (bettingPhase < 3) {
@@ -157,6 +212,14 @@ function drawTeam() {
         updatePlayerActions();
     } else {
         revealScores();
+    }
+}
+
+function fillFolded() {
+    for (curPlayer in players) {
+        if(!players[curPlayer].inGame) {
+            actions[curPlayer] = true;
+        }
     }
 }
 
@@ -194,3 +257,4 @@ function logGameState() {
 }
 
 startGame();
+toggleRaise();

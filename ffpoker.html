@@ -42,6 +42,13 @@
 
     <div id="player-actions" class="action-buttons"></div>
 
+    <div class="raise" id="raiseDiv">
+        <p>Raise amount:</p>
+        <input type="range" min="1" max="100" value="11" class="slider" id="myRange" onchange=updateRaiseAmount()>
+        <p>Raise: <span id="raiseAmount">11</span></p>
+        <button id="submit-raise" onclick=playerRaise()>Submit Raise</button>
+    </div>
+
     <div id="results">
         <h2>Results</h2>
         <p id="final-score"></p>
