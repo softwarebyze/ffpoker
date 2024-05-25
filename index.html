@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Fantasy Football Texas Hold'em</title>
@@ -9,7 +10,9 @@
             text-align: center;
             margin: 50px;
         }
-        .player-info, .team-info {
+
+        .player-info,
+        .team-info {
             margin: 20px;
             padding: 10px;
             border: 1px solid black;
@@ -17,11 +20,13 @@
             width: 200px;
             text-align: left;
         }
+
         .action-buttons button {
             margin: 5px;
         }
     </style>
 </head>
+
 <body>
     <h1>Fantasy Football Texas Hold'em</h1>
 
@@ -42,6 +47,13 @@
 
     <div id="player-actions" class="action-buttons"></div>
 
+    <div class="raise" id="raiseDiv">
+        <p>Raise amount:</p>
+        <input type="range" min="1" max="100" value="11" class="slider" id="raiseRange" oninput=updateRaiseAmount()>
+        <p>Raise: <span id="raiseAmount">11</span></p>
+        <button id="submit-raise" onclick=playerRaise()>Submit Raise</button>
+    </div>
+
     <div id="results">
         <h2>Results</h2>
         <p id="final-score"></p>
@@ -52,6 +64,7 @@
     </div>
 
 
-    <script src="app.js"></script>
+    <script src="index.js"></script>
 </body>
+
 </html>
