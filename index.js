@@ -49,14 +49,15 @@ const activePlayersData = {
 };
 
 const numPlayers = 4;
+const initialChips = 50;
+const initialBet = 10;
+
 let players = [];
 let drawnTeams = [];
 let currentPlayer = 0;
 let pot = 0;
 let activePlayers = [];
 let currentBet = 10;
-const initialChips = 50;
-const initialBet = 10;
 let betIncrease = 10;
 let actions = new Array(numPlayers).fill(false);
 let bettingPhase = 1;
@@ -99,8 +100,16 @@ function updatePlayerInfo() {
   const playersSection = document.getElementById("players-section");
   playersSection.innerHTML = `<h2>Players' Hands (Pot: ${pot})</h2>`;
   players.forEach((player) => {
-    const status = player.inGame ? "Active" : "Folded";
-    playersSection.innerHTML += `<div class="player-info"><strong>Player ${player.id} (${status})</strong><ul><li>${player.position}</li><li>Bet: ${player.bet}</li><li>Chips: ${player.chips}</li></ul></div>`;
+  const status = player.inGame ? "Active" : "Folded";
+  playersSection.innerHTML += `
+  <div class="player-info">
+    <strong>Player ${player.id} (${status})</strong>
+    <ul>
+      <li>${player.position}</li>
+      <li>Bet: ${player.bet}</li>
+      <li>Chips: ${player.chips}</li>
+    </ul>
+  </div>`;
   });
 }
 
