@@ -100,16 +100,16 @@ function updatePlayerInfo() {
   const playersSection = document.getElementById("players-section");
   playersSection.innerHTML = `<h2>Players' Hands (Pot: ${pot})</h2>`;
   players.forEach((player) => {
-  const status = player.inGame ? "Active" : "Folded";
-  playersSection.innerHTML += `
-  <div class="player-info">
-    <strong>Player ${player.id} (${status})</strong>
-    <ul>
-      <li>${player.position}</li>
-      <li>Bet: ${player.bet}</li>
-      <li>Chips: ${player.chips}</li>
-    </ul>
-  </div>`;
+    const status = player.inGame ? "Active" : "Folded";
+    playersSection.innerHTML += `
+    <div class="player-info">
+      <strong>Player ${player.id} (${status})</strong>
+      <ul>
+        <li>${player.position}</li>
+        <li>Bet: ${player.bet}</li>
+        <li>Chips: ${player.chips}</li>
+      </ul>
+    </div>`;
   });
 }
 
@@ -141,10 +141,9 @@ function updatePlayerActions() {
   }
 }
 
-function playerCheck() {
-  actions[currentPlayer] = true;
+function goToNextPhaseOrEndGame() {
+  // Check if all players have acted
   if (actions.every((a) => a)) {
-    // Check if all players have acted
     if (bettingPhase === 3 || drawnTeams.length === 2) {
       gameInProgress = false;
       revealScores();
@@ -156,6 +155,11 @@ function playerCheck() {
   } else {
     nextPlayer();
   }
+}
+
+function playerCheck() {
+  actions[currentPlayer] = true;
+  goToNextPhaseOrEndGame();
   logGameState();
 }
 
@@ -169,18 +173,7 @@ function playerCall() {
     pot += diff;
   }
   actions[currentPlayer] = true;
-  if (actions.every((a) => a)) {
-    if (bettingPhase === 3 || drawnTeams.length === 2) {
-      gameInProgress = false;
-      revealScores();
-    } else {
-      bettingPhase++;
-      drawTeam();
-      resetPlayer();
-    }
-  } else {
-    nextPlayer();
-  }
+  goToNextPhaseOrEndGame();
   logGameState();
 }
 
@@ -240,17 +233,8 @@ function playerFold() {
   if (activePlayers.length === 1) {
     gameInProgress = false;
     revealScores();
-  } else if (actions.every((a) => a)) {
-    if (bettingPhase === 3 || drawnTeams.length === 2) {
-      gameInProgress = false;
-      revealScores();
-    } else {
-      bettingPhase++;
-      drawTeam();
-      resetPlayer();
-    }
   } else {
-    nextPlayer();
+    goToNextPhaseOrEndGame();
   }
   logGameState();
 }
