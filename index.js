@@ -66,6 +66,7 @@ function updatePlayerInfo() {
 
 function updatePlayerActions() {
   const playerActions = document.getElementById('player-actions');
+  document.getElementById('raiseDiv').style.display = "none";
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
     playerActions.innerHTML = `<h3>Player ${players[currentPlayer].id}'s Turn</h3>`;
     if (players[currentPlayer].bet == currentBet) {
@@ -281,4 +282,3 @@ function logGameState() {
 }
 
 startGame();
-toggleRaise();
