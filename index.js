@@ -31,6 +31,9 @@ let startingPlayer = 0;
 let gameInProgress = true;
 
 function startGame() {
+  showGame();
+  console.log('');
+  console.log('startGame()');
   gameInProgress = true;
   players = [];
   drawnTeams = [];
@@ -44,18 +47,22 @@ function startGame() {
   document.getElementById('teams-drawn').innerHTML = '';
   document.getElementById('final-score').innerHTML = '';
 
+  document.getElementById('results').style.display = "none";
+
   for (let i = 0; i < numPlayers; i++) {
     const position = positions[Math.floor(Math.random() * positions.length)];
     players.push({ id: i + 1, position, score: 0, inGame: true, bet: initialBet, chips: initialChips - initialBet });
     pot += initialBet;
   }
 
+  actions.fill(false);
   logGameState();  // Log initial game state
   updatePlayerInfo();
   updatePlayerActions();
 }
 
 function updatePlayerInfo() {
+  console.log('updatePlayerInfo()');
   const playersSection = document.getElementById('players-section');
   playersSection.innerHTML = `<h2>Players' Hands (Pot: ${pot})</h2>`;
   players.forEach(player => {
@@ -65,6 +72,7 @@ function updatePlayerInfo() {
 }
 
 function updatePlayerActions() {
+  console.log('updatePlayerActions()');
   const playerActions = document.getElementById('player-actions');
   document.getElementById('raiseDiv').style.display = "none";
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
@@ -90,51 +98,47 @@ function updatePlayerActions() {
 }
 
 function playerCheck() {
+  console.log('');
+  console.log('playerCheck()');
   actions[currentPlayer] = true;
   if (actions.every(a => a)) { // Check if all players have acted
-    if (bettingPhase === 3 || drawnTeams.length === 2) {
-      gameInProgress = false;
-      revealScores();
-    } else {
-      bettingPhase++;
-      drawTeam();
-      resetPlayer();
-    }
+    console.log('goto goToNextPhaseOrGameEnd()');
+    goToNextPhaseOrGameEnd();
   } else {
+    console.log('goto nextPlayer()');
     nextPlayer();
   }
   logGameState();
 }
 
 function playerCall() {
+  console.log('');
+  console.log('playerCall()');
   const player = players[currentPlayer];
   const diff = currentBet - player.bet;
 
   if (diff > 0 && player.chips >= diff) {
+    console.log('playerCall() success');
     player.bet += diff;
     player.chips -= diff;
     pot += diff;
   }
   actions[currentPlayer] = true;
   if (actions.every(a => a)) {
-    if (bettingPhase === 3 || drawnTeams.length === 2) {
-      gameInProgress = false;
-      revealScores();
-    } else {
-      bettingPhase++;
-      drawTeam();
-      resetPlayer();
-    }
+    console.log('goto goToNextPhaseOrEndGame()');
+    goToNextPhaseOrGameEnd();
   } else {
+    console.log('goto nextPlayer()');
     nextPlayer();
   }
   logGameState();
 }
 
 function toggleRaise() {
+  console.log('toggleRaise()');
   const raiseDiv = document.getElementById("raiseDiv");
   if (raiseDiv.style.display === "none") {
-    raiseDiv.style.display = "initial";
+    raiseDiv.style.display = "";
   }
   else {
     raiseDiv.style.display = "none";
@@ -142,11 +146,14 @@ function toggleRaise() {
 }
 
 function playerRaise() {
+  console.log('');
+  console.log('playerRaise()');
   const player = players[currentPlayer];
   betIncrease = Number(document.getElementById('raiseRange').value);
   const raiseAmount = betIncrease;
 
   if (player.chips >= raiseAmount) {
+    console.log('playerRaise() success');
     player.bet = Number(player.bet) + Number(raiseAmount);
     player.chips -= raiseAmount;
     pot += raiseAmount;
@@ -178,41 +185,45 @@ function updateRaiseBar() {
 }
 
 function playerFold() {
+  console.log('');
+  console.log('playerFold()');
   players[currentPlayer].inGame = false;
   activePlayers = activePlayers.filter(index => index !== currentPlayer);
   actions[currentPlayer] = true;
   if (activePlayers.length === 1) {
+    console.log('goto revealScores()');
     gameInProgress = false;
     revealScores();
   } else if (actions.every(a => a)) {
-    if (bettingPhase === 3 || drawnTeams.length === 2) {
-      gameInProgress = false;
-      revealScores();
-    } else {
-      bettingPhase++;
-      drawTeam();
-      resetPlayer();
-    }
+    console.log('goto goToNextPhaseOrGameEnd()');
+    goToNextPhaseOrGameEnd();
   } else {
+    console.log('goto nextPlayer()');
     nextPlayer();
   }
   logGameState();
 }
 
 function nextPlayer() {
+  console.log('nextPlayer()');
   currentPlayer = (currentPlayer + 1) % numPlayers;
   if (!players[currentPlayer].inGame) {
+    console.log('goto nextPlayer()');
     nextPlayer();
   } else {
+    console.log('goto updatePlayerActions()');
     updatePlayerActions();
   }
 }
 
 function resetPlayer() {
+  console.log('resetPlayer()');
   currentPlayer = startingPlayer;
   if (!players[currentPlayer].inGame) {
+    console.log('goto nextPlayer()');
     nextPlayer();
   } else {
+    console.log('goto updatePlayerActions()');
     updatePlayerActions();
   }
 
@@ -222,17 +233,21 @@ function resetPlayer() {
 }
 
 function drawTeam() {
+  console.log('drawTeam()');
   const team = teams[Math.floor(Math.random() * teams.length)];
   drawnTeams.push(team);
   document.getElementById('teams-drawn').innerHTML += `<li>${team}</li>`;
   actions.fill(false);
   fillFolded();
   if (drawnTeams.length < 2) {
+    console.log('goto updatePlayerActions()');
     updatePlayerActions();
   } else if (bettingPhase < 4) {
+    console.log('bettingPhase++ goto updatePlayerActions()');
     bettingPhase++;
     updatePlayerActions();
   } else {
+    console.log('revealScores()');
     gameInProgress = false;
     revealScores();
   }
@@ -246,7 +261,22 @@ function fillFolded() {
   }
 }
 
+function goToNextPhaseOrGameEnd() {
+  if (bettingPhase === 3 || drawnTeams.length === 2) {
+    console.log('goToNextPhaseOrGameEnd() to revealScores()');
+    gameInProgress = false;
+    revealScores();
+  } else {
+    console.log('goToNextPhaseOrGameEnd() to bettingPhase++ drawTeam()');
+    bettingPhase++;
+    drawTeam();
+    resetPlayer();
+  }
+}
+
 function revealScores() {
+  console.log('revealScores()');
+  document.getElementById('results').style.display = "";
   document.getElementById('player-actions').innerHTML = '';
   gameInProgress = false;
   players.forEach(player => {
@@ -262,6 +292,7 @@ function revealScores() {
   winner.chips += pot;
 
   revealWinner(winner);
+  document.getElementById('startGame').style.display = "";
 }
 
 function revealWinner(winner) {
@@ -281,4 +312,18 @@ function logGameState() {
   console.log(`Player Actions: ${actions.map((action, index) => `Player ${index + 1}: ${action}`).join(', ')}`);
 }
 
-startGame();
+function hideGame() {
+  document.getElementById('team-info').style.display = "none";
+  document.getElementById('results').style.display = "none";
+  document.getElementById('raiseDiv').style.display = "none";
+  document.getElementById('players-section').style.display = "none";
+  document.getElementById('startGame').style.display = "";
+}
+
+function showGame() {
+  document.getElementById('team-info').style.display = "";
+  document.getElementById('players-section').style.display = "";
+  document.getElementById('startGame').style.display = "none";
+}
+
+hideGame();
