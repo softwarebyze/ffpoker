@@ -41,7 +41,7 @@
 
     <div>
 
-        <button id="startGame">Start Game</button>
+        <button id="startGame" onclick="startGame()">Start Game</button>
 
     </div>
 
@@ -49,7 +49,11 @@
 
     <div class="raise" id="raiseDiv">
         <p>Raise amount:</p>
-        <input type="range" min="1" max="100" value="11" class="slider" id="raiseRange" oninput=updateRaiseAmount()>
+        <div>
+            <span id="minLabel">1</span>
+            <input type="range" min="1" max="100" value="11" class="slider" id="raiseRange" oninput=updateRaiseAmount()>
+            <span id="maxLabel">100</span>
+        </div>
         <p>Raise: <span id="raiseAmount">11</span></p>
         <button id="submit-raise" onclick=playerRaise()>Submit Raise</button>
     </div>
