@@ -1,0 +1,164 @@
+{
+  "NFLTeams": [
+    {
+      "team": "Arizona Cardinals",
+      "primary_color": "#97233F",
+      "secondary_color": "#000000"
+    },
+    {
+      "team": "Atlanta Falcons",
+      "primary_color": "#A71930",
+      "secondary_color": "#000000"
+    },
+    {
+      "team": "Baltimore Ravens",
+      "primary_color": "#241773",
+      "secondary_color": "#000000"
+    },
+    {
+      "team": "Buffalo Bills",
+      "primary_color": "#00338D",
+      "secondary_color": "#C60C30"
+    },
+    {
+      "team": "Carolina Panthers",
+      "primary_color": "#0085CA",
+      "secondary_color": "#101820"
+    },
+    {
+      "team": "Chicago Bears",
+      "primary_color": "#0B162A",
+      "secondary_color": "#C83803"
+    },
+    {
+      "team": "Cincinnati Bengals",
+      "primary_color": "#FB4F14",
+      "secondary_color": "#000000"
+    },
+    {
+      "team": "Cleveland Browns",
+      "primary_color": "#311D00",
+      "secondary_color": "#FF3C00"
+    },
+    {
+      "team": "Dallas Cowboys",
+      "primary_color": "#041E42",
+      "secondary_color": "#869397"
+    },
+    {
+      "team": "Denver Broncos",
+      "primary_color": "#FB4F14",
+      "secondary_color": "#002244"
+    },
+    {
+      "team": "Detroit Lions",
+      "primary_color": "#0076B6",
+      "secondary_color": "#B0B7BC"
+    },
+    {
+      "team": "Green Bay Packers",
+      "primary_color": "#203731",
+      "secondary_color": "#FFB612"
+    },
+    {
+      "team": "Houston Texans",
+      "primary_color": "#03202F",
+      "secondary_color": "#A71930"
+    },
+    {
+      "team": "Indianapolis Colts",
+      "primary_color": "#002C5F",
+      "secondary_color": "#A2AAAD"
+    },
+    {
+      "team": "Jacksonville Jaguars",
+      "primary_color": "#006778",
+      "secondary_color": "#D7A22A"
+    },
+    {
+      "team": "Kansas City Chiefs",
+      "primary_color": "#E31837",
+      "secondary_color": "#FFB81C"
+    },
+    {
+      "team": "Las Vegas Raiders",
+      "primary_color": "#000000",
+      "secondary_color": "#A5ACAF"
+    },
+    {
+      "team": "Los Angeles Chargers",
+      "primary_color": "#002A5E",
+      "secondary_color": "#FFC20E"
+    },
+    {
+      "team": "Los Angeles Rams",
+      "primary_color": "#003594",
+      "secondary_color": "#FFA300"
+    },
+    {
+      "team": "Miami Dolphins",
+      "primary_color": "#008E97",
+      "secondary_color": "#F58220"
+    },
+    {
+      "team": "Minnesota Vikings",
+      "primary_color": "#4F2683",
+      "secondary_color": "#FFC62F"
+    },
+    {
+      "team": "New England Patriots",
+      "primary_color": "#002244",
+      "secondary_color": "#C60C30"
+    },
+    {
+      "team": "New Orleans Saints",
+      "primary_color": "#D3BC8D",
+      "secondary_color": "#101820"
+    },
+    {
+      "team": "New York Giants",
+      "primary_color": "#0B2265",
+      "secondary_color": "#A71930"
+    },
+    {
+      "team": "New York Jets",
+      "primary_color": "#125740",
+      "secondary_color": "#000000"
+    },
+    {
+      "team": "Philadelphia Eagles",
+      "primary_color": "#004C54",
+      "secondary_color": "#A5ACAF"
+    },
+    {
+      "team": "Pittsburgh Steelers",
+      "primary_color": "#FFB612",
+      "secondary_color": "#101820"
+    },
+    {
+      "team": "San Francisco 49ers",
+      "primary_color": "#AA0000",
+      "secondary_color": "#B3995D"
+    },
+    {
+      "team": "Seattle Seahawks",
+      "primary_color": "#002244",
+      "secondary_color": "#69BE28"
+    },
+    {
+      "team": "Tampa Bay Buccaneers",
+      "primary_color": "#D50A0A",
+      "secondary_color": "#FF7900"
+    },
+    {
+      "team": "Tennessee Titans",
+      "primary_color": "#4B92DB",
+      "secondary_color": "#002244"
+    },
+    {
+      "team": "Washington Commanders",
+      "primary_color": "#5A1414",
+      "secondary_color": "#FFB612"
+    }
+  ]
+}
