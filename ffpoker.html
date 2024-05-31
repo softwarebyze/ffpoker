@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fantasy Football Texas Hold'em</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .player-info,
+        .team-info {
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid black;
+            display: inline-block;
+            width: 200px;
+            text-align: left;
+        }
+
+        .action-buttons button {
+            margin: 5px;
+        }
+
+        .light-gray-text {
+            color: #d3d3d3;
+        }
+
+        #startGame {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        #pot-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        #pot-display strong:first-child {
+            font-size: 0.8em;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 160px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; /* Position the tooltip above the text */
+            left: 50%;
+            margin-left: -80px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Fantasy Football Texas Hold'em</h1>
+
+    <div id="players-section"></div>
+
+    <div id="team-info" class="team-info">
+        <h2>Teams Drawn</h2>
+        <ul id="teams-drawn" style="list-style: none;"></ul>
+    </div>
+
+    <div id="pot-display"></div>
+
+    <div id="player-actions" class="action-buttons"></div>
+
+    <div class="raise" id="raiseDiv">
+        <p>Raise amount:</p>
+        <div>
+            <span id="minLabel">1</span>
+            <input type="range" min="1" max="100" value="11" class="slider" id="raiseRange" oninput="updateRaiseAmount()">
+            <span id="maxLabel">100"></span>
+        </div>
+        <p>Raise: <span id="raiseAmount">11</span></p>
+        <button id="submit-raise" onclick="playerRaise()">Submit Raise</button>
+    </div>
+
+    <div id="results">
+        <h2>Results</h2>
+        <p id="final-score"></p>
+    </div>
+
+    <div id="game-log"></div>
+
+    <button id="startGame" onclick="startGame()">New Game</button>
+
+    <script src="index.js"></script>
+</body>
+
+</html>

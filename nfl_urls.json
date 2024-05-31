@@ -1,0 +1,132 @@
+{
+  "NFLTeams": [
+    {
+      "team": "Arizona Cardinals",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/arizona-cardinals-logo.png"
+    },
+    {
+      "team": "Atlanta Falcons",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/atlanta-falcons-logo.png"
+    },
+    {
+      "team": "Baltimore Ravens",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/baltimore-ravens-logo.png"
+    },
+    {
+      "team": "Buffalo Bills",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/buffalo-bills-logo.png"
+    },
+    {
+      "team": "Carolina Panthers",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/carolina-panthers-logo.png"
+    },
+    {
+      "team": "Chicago Bears",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/chicago-bears-logo.png"
+    },
+    {
+      "team": "Cincinnati Bengals",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/cincinnati-bengals-logo.png"
+    },
+    {
+      "team": "Cleveland Browns",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/cleveland-browns-logo.png"
+    },
+    {
+      "team": "Dallas Cowboys",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/dallas-cowboys-logo.png"
+    },
+    {
+      "team": "Denver Broncos",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/denver-broncos-logo.png"
+    },
+    {
+      "team": "Detroit Lions",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/detroit-lions-logo.png"
+    },
+    {
+      "team": "Green Bay Packers",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/green-bay-packers-logo.png"
+    },
+    {
+      "team": "Houston Texans",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/houston-texans-logo.png"
+    },
+    {
+      "team": "Indianapolis Colts",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/indianapolis-colts-logo.png"
+    },
+    {
+      "team": "Jacksonville Jaguars",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/jacksonville-jaguars-logo.png"
+    },
+    {
+      "team": "Kansas City Chiefs",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/kansas-city-chiefs-logo.png"
+    },
+    {
+      "team": "Las Vegas Raiders",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/las-vegas-raiders-logo.png"
+    },
+    {
+      "team": "Los Angeles Chargers",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/los-angeles-chargers-logo.png"
+    },
+    {
+      "team": "Los Angeles Rams",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/los-angeles-rams-logo.png"
+    },
+    {
+      "team": "Miami Dolphins",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/miami-dolphins-logo.png"
+    },
+    {
+      "team": "Minnesota Vikings",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/minnesota-vikings-logo.png"
+    },
+    {
+      "team": "New England Patriots",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/new-england-patriots-logo.png"
+    },
+    {
+      "team": "New Orleans Saints",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/new-orleans-saints-logo.png"
+    },
+    {
+      "team": "New York Giants",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/new-york-giants-logo.png"
+    },
+    {
+      "team": "New York Jets",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/new-york-jets-logo.png"
+    },
+    {
+      "team": "Philadelphia Eagles",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/philadelphia-eagles-logo.png"
+    },
+    {
+      "team": "Pittsburgh Steelers",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/pittsburgh-steelers-logo.png"
+    },
+    {
+      "team": "San Francisco 49ers",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/san-francisco-49ers-logo.png"
+    },
+    {
+      "team": "Seattle Seahawks",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/seattle-seahawks-logo.png"
+    },
+    {
+      "team": "Tampa Bay Buccaneers",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/tampa-bay-buccaneers-logo.png"
+    },
+    {
+      "team": "Tennessee Titans",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/tennessee-titans-logo.png"
+    },
+    {
+      "team": "Washington Commanders",
+      "image_url": "https://cdn.freebiesupply.com/images/thumbs/2x/washington-commanders-logo.png"
+    }
+  ]
+}
