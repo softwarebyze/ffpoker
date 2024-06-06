@@ -1,3 +1,35 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyB-w82pBn3TWhbfz0dUcXcTKXk9Z2OZXWE",
+  authDomain: "ffpoker-20a8e.firebaseapp.com",
+  projectId: "ffpoker-20a8e",
+  storageBucket: "ffpoker-20a8e.appspot.com",
+  messagingSenderId: "409640502099",
+  appId: "1:409640502099:web:d7096f9f32ad152b80d7a6",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function getGames(db) {
+  const gamesCol = collection(db, "games");
+  const gameSnapshot = await getDocs(gamesCol);
+  const gameList = gameSnapshot.docs.map((doc) => doc.data());
+  return gameList;
+}
+
+getGames(db).then(console.log);
 let teamColors = {};
 let teamLogos = {};
 
