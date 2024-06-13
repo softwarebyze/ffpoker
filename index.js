@@ -10,6 +10,11 @@ import {
   getDoc,
   arrayUnion,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInAnonymously,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -26,72 +31,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-const gameId = "AAAA";
-const playerId = 1;
-
-let gameState;
-
-async function loadInitialGameState() {
-  const docRef = doc(db, "games", gameId);
-  const docSnap = await getDoc(docRef);
-
-  if (docSnap.exists()) {
-    gameState = docSnap.data();
-  } else {
-    // docSnap.data() will be undefined in this case
-    console.log("No such document!");
-  }
-}
-
-const unsub = onSnapshot(doc(db, "games", "AAAA"), (doc) => {
-  gameState = doc.data();
-  console.log("Current data: ", doc.data());
-});
-
-let teamColors = {};
-let teamLogos = {};
-
-async function loadTeamData() {
-  try {
-    const colorsResponse = await fetch("nfl_colors.json");
-    const colorsData = await colorsResponse.json();
-    colorsData.NFLTeams.forEach((team) => {
-      teamColors[team.team] = {
-        primary: team.primary_color,
-        secondary: team.secondary_color,
-      };
-    });
-
-    const logosResponse = await fetch("nfl_urls.json");
-    const logosData = await logosResponse.json();
-    logosData.NFLTeams.forEach((team) => {
-      teamLogos[team.team] = team.image_url;
-    });
-
-    // startGame();
-  } catch (error) {
-    console.error("Error loading team data:", error);
-  }
-}
-
-async function joinGame() {
-  const docRef = doc(db, "games", gameId);
-  const availablePositions = [...positions];
-  const positionIndex = Math.floor(Math.random() * availablePositions.length);
-  const position = availablePositions.splice(positionIndex, 1)[0];
-  await updateDoc(docRef, {
-    players: arrayUnion({
-      id: playerId,
-      position,
-      score: 0,
-      inGame: true,
-      bet: gameState.initialBet,
-      chips: gameState.initialChips - gameState.initialBet,
-    }),
-    pot: gameState.pot + gameState.initialBet,
-  });
-}
+const auth = getAuth(app);
 
 const positions = ["QB", "RB", "WR", "Def", "TE", "K"];
 const teams = [
@@ -106,7 +46,6 @@ const teamScores = {
   "San Francisco 49ers": { RB: 30, QB: 18, WR: 20, TE: 16, Def: 20, K: 2 },
   "Dallas Cowboys": { RB: 10, QB: 20, WR: 23, TE: 12, Def: 14, K: 8 },
 };
-
 const activePlayersData = {
   "Tennessee Titans": {
     RB: "Derrick Henry",
@@ -141,8 +80,93 @@ const activePlayersData = {
     K: "Brandon Aubrey",
   },
 };
-
 const numPlayers = 4;
+const gameId = "AAAA";
+let playerId;
+let gameRef;
+let gameState;
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    playerId = user.uid;
+    await loadTeamData();
+    await loadInitialGameState();
+    showGame();
+    if (gameState.players.length < numPlayers) {
+      await joinGame();
+    }
+    if (gameState.players.length === numPlayers) {
+      startGame();
+    }
+  }
+});
+
+signInAnonymously(auth);
+
+async function loadInitialGameState() {
+  gameRef = doc(db, "games", gameId);
+  const gameSnapshot = await getDoc(gameRef);
+
+  if (gameSnapshot.exists()) {
+    gameState = gameSnapshot.data();
+  } else {
+    // docSnap.data() will be undefined in this case
+    console.log("No such document!");
+  }
+}
+
+onSnapshot(doc(db, "games", "AAAA"), (doc) => {
+  gameState = doc.data();
+  console.log("Current data: ", doc.data());
+  if (gameState.players.length === numPlayers) {
+    startGame();
+  }
+});
+
+let teamColors = {};
+let teamLogos = {};
+
+async function loadTeamData() {
+  try {
+    const colorsResponse = await fetch("nfl_colors.json");
+    const colorsData = await colorsResponse.json();
+    colorsData.NFLTeams.forEach((team) => {
+      teamColors[team.team] = {
+        primary: team.primary_color,
+        secondary: team.secondary_color,
+      };
+    });
+
+    const logosResponse = await fetch("nfl_urls.json");
+    const logosData = await logosResponse.json();
+    logosData.NFLTeams.forEach((team) => {
+      teamLogos[team.team] = team.image_url;
+    });
+
+    // startGame();
+  } catch (error) {
+    console.error("Error loading team data:", error);
+  }
+}
+
+async function joinGame() {
+  const availablePositions = [...positions];
+  const positionIndex = Math.floor(Math.random() * availablePositions.length);
+  const position = availablePositions.splice(positionIndex, 1)[0];
+  await updateDoc(gameRef, {
+    players: arrayUnion({
+      id: playerId,
+      position,
+      score: 0,
+      inGame: true,
+      bet: gameState.initialBet,
+      chips: gameState.initialChips - gameState.initialBet,
+    }),
+    pot: gameState.pot + gameState.initialBet,
+  });
+}
+
+
 // let players = [];
 // let drawnTeams = [];
 // let currentPlayer = 0;
@@ -174,8 +198,8 @@ const numPlayers = 4;
 // } = gameState;
 
 function startGame() {
-  showGame();
-  console.log("startGame gameState", gameState);
+  // showGame();
+  // console.log("startGame gameState", gameState);
   // gameInProgress = true;
   // players = [];
   // drawnTeams = [];
@@ -277,7 +301,7 @@ function updatePlayerActions() {
   }
   updatePlayerInfo();
   if (!gameInProgress) {
-    playerActions = document.getElementById("player-actions").innerHTML = "";
+    playerActions.innerHTML = "";
   }
 }
 
@@ -541,7 +565,7 @@ function showGame() {
 }
 
 hideGame();
-await loadTeamData();
-await loadInitialGameState();
+// await loadTeamData();
+// await loadInitialGameState();
 // joinGame();
-startGame();
+// startGame();
