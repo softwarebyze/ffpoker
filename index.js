@@ -166,7 +166,6 @@ async function joinGame() {
   });
 }
 
-
 // let players = [];
 // let drawnTeams = [];
 // let currentPlayer = 0;
@@ -200,15 +199,16 @@ async function joinGame() {
 function startGame() {
   // showGame();
   // console.log("startGame gameState", gameState);
-  // gameInProgress = true;
+  gameState.gameInProgress = true;
   // players = [];
-  // drawnTeams = [];
-  // currentPlayer = 0;
-  // betIncrease = 10;
-  // pot = 0;
-  // currentBet = initialBet;
-  // activePlayers = [...Array(numPlayers).keys()];
-  // bettingPhase = 1;
+  gameState.drawnTeams = [];
+  gameState.currentPlayer = 0;
+  gameState.betIncrease = 10;
+  gameState.pot = 0;
+  gameState.currentBet = gameState.initialBet;
+  gameState.activePlayers = [...Array(numPlayers).keys()];
+  gameState.bettingPhase = 1;
+  gameState.actions = new Array(numPlayers).fill(false);
 
   document.getElementById("teams-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
@@ -232,6 +232,18 @@ function startGame() {
   // }
 
   // actions.fill(false);
+
+  updateDoc(gameRef, {
+    // players: gameState.players,
+    pot: gameState.pot,
+    drawnTeams: gameState.drawnTeams,
+    currentPlayer: gameState.currentPlayer,
+    currentBet: gameState.currentBet,
+    bettingPhase: gameState.bettingPhase,
+    actions: gameState.actions,
+    gameInProgress: gameState.gameInProgress,
+  });
+
   logGameState(); // Log initial game state
   updatePlayerInfo();
   updatePlayerActions();
