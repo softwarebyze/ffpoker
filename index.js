@@ -118,8 +118,10 @@ async function loadInitialGameState() {
 onSnapshot(doc(db, "games", "AAAA"), (doc) => {
   gameState = doc.data();
   console.log("Current data: ", doc.data());
-  if (gameState.players.length === numPlayers) {
+  updatePlayerActions();
+  if (gameState.players.length === numPlayers && !gameState.gameInProgress) {
     startGame();
+    console.log("started game")
   }
 });
 
@@ -198,7 +200,6 @@ async function joinGame() {
 
 function startGame() {
   // showGame();
-  // console.log("startGame gameState", gameState);
   gameState.gameInProgress = true;
   // players = [];
   gameState.drawnTeams = [];
@@ -234,7 +235,7 @@ function startGame() {
   // actions.fill(false);
 
   updateDoc(gameRef, {
-    // players: gameState.players,
+    players: gameState.players,
     pot: gameState.pot,
     drawnTeams: gameState.drawnTeams,
     currentPlayer: gameState.currentPlayer,
@@ -296,7 +297,8 @@ function updatePlayerActions() {
   document.getElementById("raiseDiv").style.display = "none";
   const { players, gameInProgress, currentPlayer, currentBet } = gameState;
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
-    playerActions.innerHTML = `<h3>Player ${players[currentPlayer].id}'s Turn</h3>`;
+    // playerActions.innerHTML = `<h3>Player ${players[currentPlayer].id}'s Turn</h3>`;
+    playerActions.innerHTML = `<h3>Player ${currentPlayer}'s Turn</h3>`;
     if (players[currentPlayer].bet == currentBet) {
       playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
     } else {
@@ -318,8 +320,17 @@ function updatePlayerActions() {
 }
 
 function playerCheck() {
-  actions[currentPlayer] = true;
-  if (actions.every((a) => a)) {
+  const { currentPlayer } = gameState
+
+  // figure out what the new state should be
+  const updatedActions = gameState.actions
+  updatedActions[currentPlayer] = true
+  // update the state in the db
+  updateDoc(gameRef, {
+    actions: updatedActions
+  })
+
+  if (gameState.actions.every((a) => a)) {
     goToNextPhaseOrGameEnd();
   } else {
     nextPlayer();
@@ -360,22 +371,36 @@ function toggleRaise() {
 }
 
 function playerRaise() {
-  const player = players[currentPlayer];
-  betIncrease = Number(document.getElementById("raiseRange").value);
-  const raiseAmount = betIncrease;
+  const { players, currentPlayer, betIncrease, pot } = gameState;
+
+  const updatedGameState = { ...gameState }
+
+  const player = updatedGameState.players[currentPlayer];
+  const updatedBetIncrease = Number(document.getElementById("raiseRange").value);
+  updateDoc(gameRef, {
+    betIncrease: updatedBetIncrease
+  })
+  const raiseAmount = updatedBetIncrease;
 
   if (player.chips >= raiseAmount) {
     player.bet = Number(player.bet) + Number(raiseAmount);
     player.chips -= raiseAmount;
-    pot += raiseAmount;
-    currentBet = player.bet;
+    // pot += raiseAmount;
+    updatedGameState.pot += raiseAmount;
+    updatedGameState.currentBet = player.bet;
     updatePotDisplay(); // Update pot display when bet is made
-    actions.fill(false);
+    updatedGameState.actions.fill(false);
     fillFolded();
-    actions[currentPlayer] = true;
+    updatedGameState.actions[currentPlayer] = true;
     updateRaiseBar();
     toggleRaise();
+
+    updatedGameState.players[currentPlayer] = player
+
+    updateDoc(gameRef, updatedGameState)
+
   }
+
   nextPlayer();
   logGameState();
 }
@@ -417,8 +442,15 @@ function playerFold() {
 }
 
 function nextPlayer() {
-  currentPlayer = (currentPlayer + 1) % numPlayers;
-  if (!players[currentPlayer].inGame) {
+  const { players } = gameState
+
+  const updatedCurrentPlayer = (gameState.currentPlayer + 1) % numPlayers;
+
+  updateDoc(gameRef, {
+    currentPlayer: updatedCurrentPlayer
+  })
+
+  if (!players[gameState.currentPlayer].inGame) {
     nextPlayer();
   } else {
     updatePlayerActions();
@@ -471,9 +503,14 @@ function drawTeam() {
 }
 
 function fillFolded() {
-  for (curPlayer in players) {
+  const { players, actions } = gameState
+  for (const curPlayer in players) {
     if (!players[curPlayer].inGame) {
-      actions[curPlayer] = true;
+      const updatedActions = actions
+      updatedActions[curPlayer] = true;
+      updateDoc(gameRef, {
+        actions: updatedActions
+      })
     }
   }
 }
@@ -518,11 +555,9 @@ function revealWinner(winner) {
       const activePlayers = gameState.drawnTeams
         .map((team) => {
           const teamColor = teamColors[team];
-          return `<span style="color: ${
-            teamColor.primary
-          }; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${
-            activePlayersData[team][p.position]
-          }</span>`;
+          return `<span style="color: ${teamColor.primary
+            }; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${activePlayersData[team][p.position]
+            }</span>`;
         })
         .join(", ");
       const grayClass = p.inGame ? "" : "light-gray-text";
@@ -581,3 +616,11 @@ hideGame();
 // await loadInitialGameState();
 // joinGame();
 // startGame();
+
+// Allow buttons on html to use js functions
+window.playerCheck = playerCheck
+window.playerCall = playerCall
+window.playerFold = playerFold
+window.playerRaise = playerRaise
+window.toggleRaise = toggleRaise
+window.updateRaiseAmount = updateRaiseAmount
