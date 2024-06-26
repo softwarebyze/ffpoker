@@ -119,9 +119,9 @@ onSnapshot(doc(db, "games", "AAAA"), (doc) => {
   gameState = doc.data();
   console.log("Current data: ", doc.data());
   updatePlayerActions();
+  updatePotDisplay();
   if (gameState.players.length === numPlayers && !gameState.gameInProgress) {
     startGame();
-    console.log("started game")
   }
 });
 
@@ -200,8 +200,12 @@ async function joinGame() {
 
 function startGame() {
   // showGame();
+  const DEFAULT_BET = 10;
+  const DEFAULT_CHIPS = 50;
+  const originalPlayers = gameState.players
+  const updatedPlayers = originalPlayers.map(player => ({ ...player, bet: DEFAULT_BET, chips: DEFAULT_CHIPS, inGame: true }))
   gameState.gameInProgress = true;
-  // players = [];
+  gameState.players = updatedPlayers;
   gameState.drawnTeams = [];
   gameState.currentPlayer = 0;
   gameState.betIncrease = 10;
@@ -301,7 +305,7 @@ function updatePlayerActions() {
     playerActions.innerHTML = `<h3>Player ${currentPlayer}'s Turn</h3>`;
     if (players[currentPlayer].bet == currentBet) {
       playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
-    } else {
+    } else { // Eventually handle not enough chips by replacing with else if
       playerActions.innerHTML += `<button onclick="playerCall()">Call</button>`;
     }
     if (
@@ -339,26 +343,31 @@ function playerCheck() {
 }
 
 function playerCall() {
-  const { players, currentPlayer, currentBet } = gameState;
+  const { players, currentPlayer, currentBet, actions } = gameState;
   const player = players[currentPlayer];
   const diff = currentBet - player.bet;
 
-  let updatedPlayer = structuredClone(player);
-  let updatedPot = pot;
-
   if (diff > 0 && player.chips >= diff) {
+    const updatedGameState = { ...gameState };
+    const updatedPlayer = { ...player };
+
     updatedPlayer.bet += diff;
     updatedPlayer.chips -= diff;
-    updatedPot += diff;
-    updatePotDisplay(); // Update pot display when bet is made
+    updatedGameState.pot += diff;
+
+    updatedGameState.players[currentPlayer] = updatedPlayer
+
+    updatedGameState.actions[currentPlayer] = true;
+
+    updateDoc(gameRef, updatedGameState)
+
+    if (actions.every((a) => a)) {
+      goToNextPhaseOrGameEnd();
+    } else {
+      nextPlayer();
+    }
+    logGameState();
   }
-  actions[currentPlayer] = true;
-  if (actions.every((a) => a)) {
-    goToNextPhaseOrGameEnd();
-  } else {
-    nextPlayer();
-  }
-  logGameState();
 }
 
 function toggleRaise() {
@@ -385,10 +394,8 @@ function playerRaise() {
   if (player.chips >= raiseAmount) {
     player.bet = Number(player.bet) + Number(raiseAmount);
     player.chips -= raiseAmount;
-    // pot += raiseAmount;
     updatedGameState.pot += raiseAmount;
     updatedGameState.currentBet = player.bet;
-    updatePotDisplay(); // Update pot display when bet is made
     updatedGameState.actions.fill(false);
     fillFolded();
     updatedGameState.actions[currentPlayer] = true;
