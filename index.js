@@ -3,12 +3,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getFirestore,
   doc,
+  addDoc,
+  deleteDoc,
   updateDoc,
   onSnapshot,
   collection,
   getDocs,
   getDoc,
   arrayUnion,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth,
@@ -81,7 +84,7 @@ const activePlayersData = {
   },
 };
 const numPlayers = 4;
-const gameId = "AAAA";
+const gameId = "AAAB";
 let playerId;
 let gameRef;
 let gameState;
@@ -112,16 +115,51 @@ async function loadInitialGameState() {
   } else {
     // docSnap.data() will be undefined in this case
     console.log("No such document!");
+    // const newGameRef = await addDoc(collection(db, "games"), {
+    //   name: "Tokyo",
+    //   country: "Japan"
+    // });
+    const initialGameState = {
+      "initialChips": 50,
+      "actions": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "currentPlayer": 0,
+      "activePlayers": [
+      ],
+      "startingPlayer": 0,
+      "gameInProgress": false,
+      "pot": 0,
+      "players": [
+        // {
+        //     "inGame": true,
+        //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
+        //     "position": "WR",
+        //     "bet": 10,
+        //     "score": 0,
+        //     "chips": 50
+        // }
+      ],
+      "bettingPhase": 1,
+      "initialBet": 10,
+      "currentBet": 10,
+      "drawnTeams": []
+    }
+    await setDoc(doc(db, "games", gameId), initialGameState);
   }
 }
 
-onSnapshot(doc(db, "games", "AAAA"), (doc) => {
+onSnapshot(doc(db, "games", gameId), (doc) => {
   gameState = doc.data();
   console.log("Current data: ", doc.data());
   updatePlayerActions();
   updatePotDisplay();
+  updateUI();
   if (gameState.players.length === numPlayers && !gameState.gameInProgress) {
-    startGame();
+    document.getElementById("startGame").style.display = "";
   }
 });
 
@@ -168,38 +206,7 @@ async function joinGame() {
   });
 }
 
-// let players = [];
-// let drawnTeams = [];
-// let currentPlayer = 0;
-// let pot = 0;
-// let activePlayers = [];
-// let currentBet = 10;
-// const initialChips = 50;
-// const initialBet = 10;
-// let betIncrease = 10;
-// let actions = new Array(numPlayers).fill(false);
-// let bettingPhase = 1;
-// let startingPlayer = 0;
-// let gameInProgress = true;
-
-// const {
-//   players,
-//   drawnTeams,
-//   currentPlayer,
-//   pot,
-//   activePlayers,
-//   currentBet,
-//   initialChips,
-//   initialBet,
-//   betIncrease,
-//   actions,
-//   bettingPhase,
-//   startingPlayer,
-//   gameInProgress,
-// } = gameState;
-
 function startGame() {
-  // showGame();
   const DEFAULT_BET = 10;
   const DEFAULT_CHIPS = 50;
   const originalPlayers = gameState.players
@@ -208,7 +215,6 @@ function startGame() {
   gameState.players = updatedPlayers;
   gameState.drawnTeams = [];
   gameState.currentPlayer = 0;
-  gameState.betIncrease = 10;
   gameState.pot = 0;
   gameState.currentBet = gameState.initialBet;
   gameState.activePlayers = [...Array(numPlayers).keys()];
@@ -219,24 +225,7 @@ function startGame() {
   document.getElementById("final-score").innerHTML = "";
 
   document.getElementById("results").style.display = "none";
-
-  // const availablePositions = [...positions];
-
-  // for (let i = 0; i < numPlayers; i++) {
-  //   const positionIndex = Math.floor(Math.random() * availablePositions.length);
-  //   const position = availablePositions.splice(positionIndex, 1)[0];
-  //   players.push({
-  //     id: i + 1,
-  //     position,
-  //     score: 0,
-  //     inGame: true,
-  //     bet: initialBet,
-  //     chips: initialChips - initialBet,
-  //   });
-  //   pot += initialBet;
-  // }
-
-  // actions.fill(false);
+  document.getElementById("startGame").style.display = "none";
 
   updateDoc(gameRef, {
     players: gameState.players,
@@ -244,15 +233,13 @@ function startGame() {
     drawnTeams: gameState.drawnTeams,
     currentPlayer: gameState.currentPlayer,
     currentBet: gameState.currentBet,
+    activePlayers: gameState.activePlayers,
     bettingPhase: gameState.bettingPhase,
     actions: gameState.actions,
     gameInProgress: gameState.gameInProgress,
   });
 
   logGameState(); // Log initial game state
-  updatePlayerInfo();
-  updatePlayerActions();
-  updatePotDisplay();
 }
 
 function updatePlayerInfo() {
@@ -313,9 +300,9 @@ function updatePlayerActions() {
       players[currentPlayer].bet + players[currentPlayer].chips
     ) {
       playerActions.innerHTML += `<button onclick="toggleRaise()">Raise</button>`;
+      updateRaiseBar();
     }
     playerActions.innerHTML += `<button onclick="playerFold()">Fold</button>`;
-    updateRaiseBar();
   }
   updatePlayerInfo();
   if (!gameInProgress) {
@@ -380,16 +367,12 @@ function toggleRaise() {
 }
 
 function playerRaise() {
-  const { players, currentPlayer, betIncrease, pot } = gameState;
+  const { players, currentPlayer, pot } = gameState;
 
-  const updatedGameState = { ...gameState }
+  const updatedGameState = { ...gameState };
 
   const player = updatedGameState.players[currentPlayer];
-  const updatedBetIncrease = Number(document.getElementById("raiseRange").value);
-  updateDoc(gameRef, {
-    betIncrease: updatedBetIncrease
-  })
-  const raiseAmount = updatedBetIncrease;
+  const raiseAmount = Number(document.getElementById("raiseRange").value);
 
   if (player.chips >= raiseAmount) {
     player.bet = Number(player.bet) + Number(raiseAmount);
@@ -402,9 +385,9 @@ function playerRaise() {
     updateRaiseBar();
     toggleRaise();
 
-    updatedGameState.players[currentPlayer] = player
+    updatedGameState.players[currentPlayer] = player;
 
-    updateDoc(gameRef, updatedGameState)
+    updateDoc(gameRef, updatedGameState);
 
   }
 
@@ -434,39 +417,63 @@ function updateRaiseBar() {
 }
 
 function playerFold() {
-  players[currentPlayer].inGame = false;
-  activePlayers = activePlayers.filter((index) => index !== currentPlayer);
-  actions[currentPlayer] = true;
-  if (activePlayers.length === 1) {
-    gameInProgress = false;
+  const { players, currentPlayer, actions } = gameState
+  const updatedPlayers = [...players];
+  updatedPlayers[currentPlayer].inGame = false;
+  const updatedActivePlayers = gameState.activePlayers.filter((index) => index !== currentPlayer);
+  const updatedActions = [...actions];
+  updatedActions[currentPlayer] = true;
+
+  if (updatedActivePlayers.length === 1) {
+    const updatedGameInProgress = false;
+    updateDoc(gameRef, {
+      players: updatedPlayers,
+      actions: updatedActions,
+      activePlayers: updatedActivePlayers,
+      gameInProgress: updatedGameInProgress,
+    })
+
+  } else {
+    updateDoc(gameRef, {
+      players: updatedPlayers,
+      actions: updatedActions,
+      activePlayers: updatedActivePlayers,
+    })
+  }
+
+  if (updatedActivePlayers.length === 1) {
     revealScores();
   } else if (actions.every((a) => a)) {
     goToNextPhaseOrGameEnd();
   } else {
     nextPlayer();
   }
+
   logGameState();
 }
 
 function nextPlayer() {
   const { players } = gameState
 
-  const updatedCurrentPlayer = (gameState.currentPlayer + 1) % numPlayers;
+  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % numPlayers;
+  while (!players[updatedCurrentPlayer].inGame) {
+    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % numPlayers;
+  }
 
   updateDoc(gameRef, {
     currentPlayer: updatedCurrentPlayer
   })
 
-  if (!players[gameState.currentPlayer].inGame) {
-    nextPlayer();
-  } else {
-    updatePlayerActions();
-  }
+  updatePlayerActions();
 }
 
 function resetPlayer() {
-  currentPlayer = startingPlayer;
-  if (!players[currentPlayer].inGame) {
+  const { startingPlayer, players, gameInProgress } = gameState
+  updateDoc(gameRef, {
+    currentPlayer: startingPlayer,
+  })
+
+  if (!players[startingPlayer].inGame) {
     nextPlayer();
   } else {
     updatePlayerActions();
@@ -484,27 +491,31 @@ function drawTeam() {
   );
   const team =
     availableTeams[Math.floor(Math.random() * availableTeams.length)];
-  gameState.drawnTeams.push(team);
-
-  const teamColor = teamColors[team];
-  const teamLogo = teamLogos[team];
-  const teamElement = document.createElement("li");
-  teamElement.innerHTML = `${team} <img src="${teamLogo}" alt="${team} logo" style="width: 20px; vertical-align: middle; margin-left: 5px;">`;
-  teamElement.style.listStyle = "none";
-  teamElement.style.color = teamColor.primary;
-  teamElement.style.webkitTextStroke = `0.5px ${teamColor.secondary}`;
-  teamElement.style.fontWeight = "bold";
-
-  document.getElementById("teams-drawn").appendChild(teamElement);
-  actions.fill(false);
+  const updatedDrawnTeams = [...gameState.drawnTeams];
+  updatedDrawnTeams.push(team);
+  const updatedActions = [...gameState.actions.fill(false)];
   fillFolded();
-  if (gameState.drawnTeams.length < 2) {
+  if (updatedDrawnTeams.length < 2) {
+    updateDoc(gameRef, {
+      actions: updatedActions,
+      drawnTeams: updatedDrawnTeams,
+    })
     updatePlayerActions();
-  } else if (bettingPhase < 4) {
-    bettingPhase++;
+  } else if (gameState.bettingPhase < 4) {
+    const updatedBettingPhase = gameState.bettingPhase + 1;
+    updateDoc(gameRef, {
+      actions: updatedActions,
+      drawnTeams: updatedDrawnTeams,
+      bettingPhase: updatedBettingPhase,
+    })
     updatePlayerActions();
   } else {
-    gameInProgress = false;
+    const updatedGameInProgress = false;
+    updateDoc(gameRef, {
+      actions: updatedActions,
+      drawnTeams: updatedDrawnTeams,
+      gameInProgress: updatedGameInProgress,
+    })
     revealScores();
   }
 }
@@ -523,20 +534,32 @@ function fillFolded() {
 }
 
 function goToNextPhaseOrGameEnd() {
-  if (bettingPhase === 3 || gameState.drawnTeams.length === 2) {
-    gameInProgress = false;
+  if (gameState.bettingPhase === 3 || gameState.drawnTeams.length === 2) {
+    const updatedGameInProgress = false;
+    updateDoc(gameRef, {
+      gameInProgress: updatedGameInProgress,
+    })
     revealScores();
   } else {
-    bettingPhase++;
+    const updatedBettingPhase = gameState.bettingPhase + 1;
+    updateDoc(gameRef, {
+      bettingPhase: updatedBettingPhase,
+    })
     drawTeam();
     resetPlayer();
   }
 }
 
 function revealScores() {
+  const { players, pot } = gameState;
   document.getElementById("results").style.display = "";
   document.getElementById("player-actions").innerHTML = "";
-  gameInProgress = false;
+  const updatedGameInProgress = false;
+
+  updateDoc(gameRef, {
+    gameInProgress: updatedGameInProgress,
+  })
+
   players.forEach((player) => {
     gameState.drawnTeams.forEach((team) => {
       if (teamScores[team][player.position] && player.inGame) {
@@ -557,9 +580,10 @@ function revealScores() {
 }
 
 function revealWinner(winner) {
-  const scoresText = players
+  const { players, pot } = gameState;
+  const scoresText = [...players]
     .map((p) => {
-      const activePlayers = gameState.drawnTeams
+      const activePlayers = [...gameState.drawnTeams]
         .map((team) => {
           const teamColor = teamColors[team];
           return `<span style="color: ${teamColor.primary
@@ -604,6 +628,33 @@ function logGameState() {
   );
 }
 
+function updateUI() {
+  const { drawnTeams, gameInProgress } = gameState;
+  const numDrawnTeamsDisplayed = document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
+  if (numDrawnTeamsDisplayed != drawnTeams.length) {
+    updateTeamUI();
+  }
+  if (!gameInProgress && document.getElementById("results").style.display == "none") {
+    revealScores();
+  }
+}
+
+function updateTeamUI() {
+  document.getElementById("teams-drawn").innerHTML = "";
+  for (const team of gameState.drawnTeams) {
+    const teamColor = teamColors[team];
+    const teamLogo = teamLogos[team];
+    const teamElement = document.createElement("li");
+    teamElement.innerHTML = `${team} <img src="${teamLogo}" alt="${team} logo" style="width: 20px; vertical-align: middle; margin-left: 5px;">`;
+    teamElement.style.listStyle = "none";
+    teamElement.style.color = teamColor.primary;
+    teamElement.style.webkitTextStroke = `0.5px ${teamColor.secondary}`;
+    teamElement.style.fontWeight = "bold";
+
+    document.getElementById("teams-drawn").appendChild(teamElement);
+  }
+}
+
 function hideGame() {
   document.getElementById("team-info").style.display = "none";
   document.getElementById("results").style.display = "none";
@@ -631,3 +682,5 @@ window.playerFold = playerFold
 window.playerRaise = playerRaise
 window.toggleRaise = toggleRaise
 window.updateRaiseAmount = updateRaiseAmount
+window.startGame = startGame
+window.deleteGame = async gameId => await deleteDoc(doc(db, "games", gameId))
