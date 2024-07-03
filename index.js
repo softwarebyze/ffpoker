@@ -637,6 +637,10 @@ function updateUI() {
   if (!gameInProgress && document.getElementById("results").style.display == "none") {
     revealScores();
   }
+  if (gameInProgress && document.getElementById("results").style.display == "") {
+    document.getElementById("results").style.display = "none";
+    document.getElementById("startGame").style.display = "none";
+  }
 }
 
 function updateTeamUI() {
