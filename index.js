@@ -295,10 +295,13 @@ function updateTooltips() {
 
 function updatePlayerActions() {
   const playerActions = document.getElementById("player-actions");
+  const timer = document.getElementById("timer");
   document.getElementById("raiseDiv").style.display = "none";
   const { players, gameInProgress, currentPlayer, currentBet } = gameState;
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
     if (players[currentPlayer].id == playerId) {
+      timer.style.display = "";
+      timer.innerHTML = "1:00";
       playerActions.innerHTML = `<h3>Your turn!</h3>`;
       if (players[currentPlayer].bet == currentBet) {
         playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
@@ -314,6 +317,7 @@ function updatePlayerActions() {
       }
       playerActions.innerHTML += `<button onclick="playerFold()">Fold</button>`;
     } else {
+      timer.style.display = "none";
       playerActions.innerHTML = `<h3>Player ${currentPlayer}'s Turn</h3>`;
     }
   }
@@ -668,12 +672,40 @@ function updateTeamUI() {
   }
 }
 
+const interval = setInterval(updateTimer, 1000);
+
+function updateTimer() {
+  const timer = document.getElementById("timer");
+
+  if (timer.style.display == "none")
+    return;
+
+  if (timer.innerHTML == "1:00") {
+    timer.innerHTML = "0:59";
+    return;
+  }
+
+  const [minute, second] = timer.innerHTML.split(":");
+  let currentTime = Number(second);
+  if (currentTime <= 10) {
+    timer.innerHTML = "0:0" + String(--currentTime);
+  } else {
+    timer.innerHTML = "0:" + String(--currentTime);
+  }
+
+  if (currentTime <= 0) {
+    timer.style.display = "none";
+    playerFold();
+  }
+}
+
 function hideGame() {
   document.getElementById("team-info").style.display = "none";
   document.getElementById("results").style.display = "none";
   document.getElementById("raiseDiv").style.display = "none";
   document.getElementById("players-section").style.display = "none";
   document.getElementById("startGame").style.display = "";
+  document.getElementById("timer").style.display = "none";
 }
 
 function showGame() {
