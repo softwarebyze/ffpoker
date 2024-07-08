@@ -1,28 +1,43 @@
-let teamColors = {};
-let teamLogos = {};
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  onSnapshot,
+  collection,
+  getDocs,
+  getDoc,
+  arrayUnion,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInAnonymously,
+  setPersistence,
+  browserSessionPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-async function loadTeamData() {
-  try {
-    const colorsResponse = await fetch("nfl_colors.json");
-    const colorsData = await colorsResponse.json();
-    colorsData.NFLTeams.forEach((team) => {
-      teamColors[team.team] = {
-        primary: team.primary_color,
-        secondary: team.secondary_color,
-      };
-    });
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyB-w82pBn3TWhbfz0dUcXcTKXk9Z2OZXWE",
+  authDomain: "ffpoker-20a8e.firebaseapp.com",
+  projectId: "ffpoker-20a8e",
+  storageBucket: "ffpoker-20a8e.appspot.com",
+  messagingSenderId: "409640502099",
+  appId: "1:409640502099:web:d7096f9f32ad152b80d7a6",
+};
 
-    const logosResponse = await fetch("nfl_urls.json");
-    const logosData = await logosResponse.json();
-    logosData.NFLTeams.forEach((team) => {
-      teamLogos[team.team] = team.image_url;
-    });
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-    startGame();
-  } catch (error) {
-    console.error("Error loading team data:", error);
-  }
-}
 
 const positions = ["QB", "RB", "WR", "Def", "TE", "K"];
 const teams = [
@@ -37,7 +52,6 @@ const teamScores = {
   "San Francisco 49ers": { RB: 30, QB: 18, WR: 20, TE: 16, Def: 20, K: 2 },
   "Dallas Cowboys": { RB: 10, QB: 20, WR: 23, TE: 12, Def: 14, K: 8 },
 };
-
 const activePlayersData = {
   "Tennessee Titans": {
     RB: "Derrick Henry",
@@ -72,66 +86,176 @@ const activePlayersData = {
     K: "Brandon Aubrey",
   },
 };
-
 const numPlayers = 4;
-let players = [];
-let drawnTeams = [];
-let currentPlayer = 0;
-let pot = 0;
-let activePlayers = [];
-let currentBet = 10;
-const initialChips = 50;
-const initialBet = 10;
-let betIncrease = 10;
-let actions = new Array(numPlayers).fill(false);
-let bettingPhase = 1;
-let startingPlayer = 0;
-let gameInProgress = true;
+const gameId = "AAAB";
+document.getElementById('game-id').innerHTML = gameId;
+let playerId;
+let gameRef;
+let gameState;
+
+onAuthStateChanged(auth, async (user) => {
+  console.log('authStateChanged', user);
+  if (user && user.uid) {
+    // playerId = createPlayerId() where createPlayerId creates a random ID
+    playerId = user.uid;
+    document.getElementById('player-id').innerHTML = playerId;
+    await loadTeamData();
+    await loadInitialGameState();
+    showGame();
+    if (gameState.players.length < numPlayers) {
+      await joinGame();
+    }
+    if (gameState.players.length === numPlayers) {
+      startGame();
+    }
+  }
+});
+
+// Existing and future Auth states are now persisted in the current
+// session only. Closing the window would clear any existing state even
+// if a user forgets to sign out.
+setPersistence(auth, browserSessionPersistence)
+
+signInAnonymously(auth);
+
+async function loadInitialGameState() {
+  gameRef = doc(db, "games", gameId);
+  const gameSnapshot = await getDoc(gameRef);
+
+  if (gameSnapshot.exists()) {
+    gameState = gameSnapshot.data();
+  } else {
+    // docSnap.data() will be undefined in this case
+    console.log("No such document!");
+    const initialGameState = {
+      "initialChips": 50,
+      "actions": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "currentPlayer": 0,
+      "activePlayers": [
+      ],
+      "startingPlayer": 0,
+      "gameInProgress": false,
+      "pot": 0,
+      "players": [
+        // {
+        //     "inGame": true,
+        //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
+        //     "position": "WR",
+        //     "bet": 10,
+        //     "score": 0,
+        //     "chips": 50
+        // }
+      ],
+      "bettingPhase": 1,
+      "initialBet": 10,
+      "currentBet": 10,
+      "drawnTeams": []
+    }
+    await setDoc(doc(db, "games", gameId), initialGameState);
+  }
+}
+
+onSnapshot(doc(db, "games", gameId), (doc) => {
+  gameState = doc.data();
+  console.log("Current data: ", doc.data());
+  updatePlayerActions();
+  updatePotDisplay();
+  updateUI();
+  if (gameState.players.length === numPlayers && !gameState.gameInProgress) {
+    document.getElementById("startGame").style.display = "";
+  }
+});
+
+let teamColors = {};
+let teamLogos = {};
+
+async function loadTeamData() {
+  try {
+    const colorsResponse = await fetch("nfl_colors.json");
+    const colorsData = await colorsResponse.json();
+    colorsData.NFLTeams.forEach((team) => {
+      teamColors[team.team] = {
+        primary: team.primary_color,
+        secondary: team.secondary_color,
+      };
+    });
+
+    const logosResponse = await fetch("nfl_urls.json");
+    const logosData = await logosResponse.json();
+    logosData.NFLTeams.forEach((team) => {
+      teamLogos[team.team] = team.image_url;
+    });
+
+  } catch (error) {
+    console.error("Error loading team data:", error);
+  }
+}
+
+async function joinGame() {
+  const availablePositions = [...positions];
+  const positionIndex = Math.floor(Math.random() * availablePositions.length);
+  const position = availablePositions.splice(positionIndex, 1)[0];
+  const numPlayers = gameState.players.length;
+  const newPlayerIndex = numPlayers;
+  document.getElementById('player-number').innerHTML = newPlayerIndex;
+  await updateDoc(gameRef, {
+    players: arrayUnion({
+      id: playerId,
+      position,
+      score: 0,
+      inGame: true,
+      bet: gameState.initialBet,
+      chips: gameState.initialChips - gameState.initialBet,
+    }),
+    pot: gameState.pot + gameState.initialBet,
+  });
+  }
 
 function startGame() {
-  showGame();
-  gameInProgress = true;
-  players = [];
-  drawnTeams = [];
-  currentPlayer = 0;
-  betIncrease = 10;
-  pot = 0;
-  currentBet = initialBet;
-  activePlayers = [...Array(numPlayers).keys()];
-  bettingPhase = 1;
+  const DEFAULT_BET = 10;
+  const DEFAULT_CHIPS = 50;
+  const originalPlayers = gameState.players
+  const updatedPlayers = originalPlayers.map(player => ({ ...player, bet: DEFAULT_BET, chips: DEFAULT_CHIPS, inGame: true }))
+  gameState.gameInProgress = true;
+  gameState.players = updatedPlayers;
+  gameState.drawnTeams = [];
+  gameState.currentPlayer = 0;
+  gameState.pot = 0;
+  gameState.currentBet = gameState.initialBet;
+  gameState.activePlayers = [...Array(numPlayers).keys()];
+  gameState.bettingPhase = 1;
+  gameState.actions = new Array(numPlayers).fill(false);
 
   document.getElementById("teams-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
 
   document.getElementById("results").style.display = "none";
+  document.getElementById("startGame").style.display = "none";
 
-  const availablePositions = [...positions];
+  updateDoc(gameRef, {
+    players: gameState.players,
+    pot: gameState.pot,
+    drawnTeams: gameState.drawnTeams,
+    currentPlayer: gameState.currentPlayer,
+    currentBet: gameState.currentBet,
+    activePlayers: gameState.activePlayers,
+    bettingPhase: gameState.bettingPhase,
+    actions: gameState.actions,
+    gameInProgress: gameState.gameInProgress,
+  });
 
-  for (let i = 0; i < numPlayers; i++) {
-    const positionIndex = Math.floor(Math.random() * availablePositions.length);
-    const position = availablePositions.splice(positionIndex, 1)[0];
-    players.push({
-      id: i + 1,
-      position,
-      score: 0,
-      inGame: true,
-      bet: initialBet,
-      chips: initialChips - initialBet,
-    });
-    pot += initialBet;
-  }
-
-  actions.fill(false);
   logGameState(); // Log initial game state
-  updatePlayerInfo();
-  updatePlayerActions();
-  updatePotDisplay();
 }
 
 function updatePlayerInfo() {
   const playersSection = document.getElementById("players-section");
   playersSection.innerHTML = "";
-  players.forEach((player) => {
+  gameState.players.forEach((player) => {
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
     const activatedPlayers = getActivatedPlayers(player.position);
@@ -153,7 +277,7 @@ function updatePlayerInfo() {
 }
 
 function getActivatedPlayers(position) {
-  return drawnTeams
+  return gameState.drawnTeams
     .map((team) => {
       const teamColor = teamColors[team];
       return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${activePlayersData[team][position]}</span>`;
@@ -172,31 +296,45 @@ function updateTooltips() {
 function updatePlayerActions() {
   const playerActions = document.getElementById("player-actions");
   document.getElementById("raiseDiv").style.display = "none";
+  const { players, gameInProgress, currentPlayer, currentBet } = gameState;
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
-    playerActions.innerHTML = `<h3>Player ${players[currentPlayer].id}'s Turn</h3>`;
-    if (players[currentPlayer].bet == currentBet) {
-      playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
+    if (players[currentPlayer].id == playerId) {
+      playerActions.innerHTML = `<h3>Your turn!</h3>`;
+      if (players[currentPlayer].bet == currentBet) {
+        playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
+      } else { // Eventually handle not enough chips by replacing with else if
+        playerActions.innerHTML += `<button onclick="playerCall()">Call</button>`;
+      }
+      if (
+        currentBet <
+        players[currentPlayer].bet + players[currentPlayer].chips
+      ) {
+        playerActions.innerHTML += `<button onclick="toggleRaise()">Raise</button>`;
+        updateRaiseBar();
+      }
+      playerActions.innerHTML += `<button onclick="playerFold()">Fold</button>`;
     } else {
-      playerActions.innerHTML += `<button onclick="playerCall()">Call</button>`;
+      playerActions.innerHTML = `<h3>Player ${currentPlayer}'s Turn</h3>`;
     }
-    if (
-      currentBet <
-      players[currentPlayer].bet + players[currentPlayer].chips
-    ) {
-      playerActions.innerHTML += `<button onclick="toggleRaise()">Raise</button>`;
-    }
-    playerActions.innerHTML += `<button onclick="playerFold()">Fold</button>`;
-    updateRaiseBar();
   }
   updatePlayerInfo();
   if (!gameInProgress) {
-    playerActions = document.getElementById("player-actions").innerHTML = "";
+    playerActions.innerHTML = "";
   }
 }
 
 function playerCheck() {
-  actions[currentPlayer] = true;
-  if (actions.every((a) => a)) {
+  const { currentPlayer } = gameState
+
+  // figure out what the new state should be
+  const updatedActions = gameState.actions
+  updatedActions[currentPlayer] = true
+  // update the state in the db
+  updateDoc(gameRef, {
+    actions: updatedActions
+  })
+
+  if (gameState.actions.every((a) => a)) {
     goToNextPhaseOrGameEnd();
   } else {
     nextPlayer();
@@ -205,22 +343,31 @@ function playerCheck() {
 }
 
 function playerCall() {
+  const { players, currentPlayer, currentBet, actions } = gameState;
   const player = players[currentPlayer];
   const diff = currentBet - player.bet;
 
   if (diff > 0 && player.chips >= diff) {
-    player.bet += diff;
-    player.chips -= diff;
-    pot += diff;
-    updatePotDisplay(); // Update pot display when bet is made
+    const updatedGameState = { ...gameState };
+    const updatedPlayer = { ...player };
+
+    updatedPlayer.bet += diff;
+    updatedPlayer.chips -= diff;
+    updatedGameState.pot += diff;
+
+    updatedGameState.players[currentPlayer] = updatedPlayer
+
+    updatedGameState.actions[currentPlayer] = true;
+
+    updateDoc(gameRef, updatedGameState)
+
+    if (actions.every((a) => a)) {
+      goToNextPhaseOrGameEnd();
+    } else {
+      nextPlayer();
+    }
+    logGameState();
   }
-  actions[currentPlayer] = true;
-  if (actions.every((a) => a)) {
-    goToNextPhaseOrGameEnd();
-  } else {
-    nextPlayer();
-  }
-  logGameState();
 }
 
 function toggleRaise() {
@@ -233,22 +380,30 @@ function toggleRaise() {
 }
 
 function playerRaise() {
-  const player = players[currentPlayer];
-  betIncrease = Number(document.getElementById("raiseRange").value);
-  const raiseAmount = betIncrease;
+  const { players, currentPlayer, pot } = gameState;
+
+  const updatedGameState = { ...gameState };
+
+  const player = updatedGameState.players[currentPlayer];
+  const raiseAmount = Number(document.getElementById("raiseRange").value);
 
   if (player.chips >= raiseAmount) {
     player.bet = Number(player.bet) + Number(raiseAmount);
     player.chips -= raiseAmount;
-    pot += raiseAmount;
-    currentBet = player.bet;
-    updatePotDisplay(); // Update pot display when bet is made
-    actions.fill(false);
+    updatedGameState.pot += raiseAmount;
+    updatedGameState.currentBet = player.bet;
+    updatedGameState.actions.fill(false);
     fillFolded();
-    actions[currentPlayer] = true;
+    updatedGameState.actions[currentPlayer] = true;
     updateRaiseBar();
     toggleRaise();
+
+    updatedGameState.players[currentPlayer] = player;
+
+    updateDoc(gameRef, updatedGameState);
+
   }
+
   nextPlayer();
   logGameState();
 }
@@ -260,6 +415,7 @@ function updateRaiseAmount() {
 }
 
 function updateRaiseBar() {
+  const { players, currentPlayer, currentBet } = gameState;
   const maxRaise = players[currentPlayer].chips;
   document.getElementById("raiseRange").max = maxRaise;
   document.getElementById("maxLabel").innerHTML = maxRaise;
@@ -274,32 +430,63 @@ function updateRaiseBar() {
 }
 
 function playerFold() {
-  players[currentPlayer].inGame = false;
-  activePlayers = activePlayers.filter((index) => index !== currentPlayer);
-  actions[currentPlayer] = true;
-  if (activePlayers.length === 1) {
-    gameInProgress = false;
+  const { players, currentPlayer, actions } = gameState
+  const updatedPlayers = [...players];
+  updatedPlayers[currentPlayer].inGame = false;
+  const updatedActivePlayers = gameState.activePlayers.filter((index) => index !== currentPlayer);
+  const updatedActions = [...actions];
+  updatedActions[currentPlayer] = true;
+
+  if (updatedActivePlayers.length === 1) {
+    const updatedGameInProgress = false;
+    updateDoc(gameRef, {
+      players: updatedPlayers,
+      actions: updatedActions,
+      activePlayers: updatedActivePlayers,
+      gameInProgress: updatedGameInProgress,
+    })
+
+  } else {
+    updateDoc(gameRef, {
+      players: updatedPlayers,
+      actions: updatedActions,
+      activePlayers: updatedActivePlayers,
+    })
+  }
+
+  if (updatedActivePlayers.length === 1) {
     revealScores();
   } else if (actions.every((a) => a)) {
     goToNextPhaseOrGameEnd();
   } else {
     nextPlayer();
   }
+
   logGameState();
 }
 
 function nextPlayer() {
-  currentPlayer = (currentPlayer + 1) % numPlayers;
-  if (!players[currentPlayer].inGame) {
-    nextPlayer();
-  } else {
-    updatePlayerActions();
+  const { players } = gameState
+
+  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % numPlayers;
+  while (!players[updatedCurrentPlayer].inGame) {
+    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % numPlayers;
   }
+
+  updateDoc(gameRef, {
+    currentPlayer: updatedCurrentPlayer
+  })
+
+  updatePlayerActions();
 }
 
 function resetPlayer() {
-  currentPlayer = startingPlayer;
-  if (!players[currentPlayer].inGame) {
+  const { startingPlayer, players, gameInProgress } = gameState
+  updateDoc(gameRef, {
+    currentPlayer: startingPlayer,
+  })
+
+  if (!players[startingPlayer].inGame) {
     nextPlayer();
   } else {
     updatePlayerActions();
@@ -312,59 +499,82 @@ function resetPlayer() {
 }
 
 function drawTeam() {
-  const availableTeams = teams.filter((team) => !drawnTeams.includes(team));
+  const availableTeams = teams.filter(
+    (team) => !gameState.drawnTeams.includes(team)
+  );
   const team =
     availableTeams[Math.floor(Math.random() * availableTeams.length)];
-  drawnTeams.push(team);
-
-  const teamColor = teamColors[team];
-  const teamLogo = teamLogos[team];
-  const teamElement = document.createElement("li");
-  teamElement.innerHTML = `${team} <img src="${teamLogo}" alt="${team} logo" style="width: 20px; vertical-align: middle; margin-left: 5px;">`;
-  teamElement.style.listStyle = "none";
-  teamElement.style.color = teamColor.primary;
-  teamElement.style.webkitTextStroke = `0.5px ${teamColor.secondary}`;
-  teamElement.style.fontWeight = "bold";
-
-  document.getElementById("teams-drawn").appendChild(teamElement);
-  actions.fill(false);
+  const updatedDrawnTeams = [...gameState.drawnTeams];
+  updatedDrawnTeams.push(team);
+  const updatedActions = [...gameState.actions.fill(false)];
   fillFolded();
-  if (drawnTeams.length < 2) {
+  if (updatedDrawnTeams.length < 2) {
+    updateDoc(gameRef, {
+      actions: updatedActions,
+      drawnTeams: updatedDrawnTeams,
+    })
     updatePlayerActions();
-  } else if (bettingPhase < 4) {
-    bettingPhase++;
+  } else if (gameState.bettingPhase < 4) {
+    const updatedBettingPhase = gameState.bettingPhase + 1;
+    updateDoc(gameRef, {
+      actions: updatedActions,
+      drawnTeams: updatedDrawnTeams,
+      bettingPhase: updatedBettingPhase,
+    })
     updatePlayerActions();
   } else {
-    gameInProgress = false;
+    const updatedGameInProgress = false;
+    updateDoc(gameRef, {
+      actions: updatedActions,
+      drawnTeams: updatedDrawnTeams,
+      gameInProgress: updatedGameInProgress,
+    })
     revealScores();
   }
 }
 
 function fillFolded() {
-  for (curPlayer in players) {
+  const { players, actions } = gameState
+  for (const curPlayer in players) {
     if (!players[curPlayer].inGame) {
-      actions[curPlayer] = true;
+      const updatedActions = actions
+      updatedActions[curPlayer] = true;
+      updateDoc(gameRef, {
+        actions: updatedActions
+      })
     }
   }
 }
 
 function goToNextPhaseOrGameEnd() {
-  if (bettingPhase === 3 || drawnTeams.length === 2) {
-    gameInProgress = false;
+  if (gameState.bettingPhase === 3 || gameState.drawnTeams.length === 2) {
+    const updatedGameInProgress = false;
+    updateDoc(gameRef, {
+      gameInProgress: updatedGameInProgress,
+    })
     revealScores();
   } else {
-    bettingPhase++;
+    const updatedBettingPhase = gameState.bettingPhase + 1;
+    updateDoc(gameRef, {
+      bettingPhase: updatedBettingPhase,
+    })
     drawTeam();
     resetPlayer();
   }
 }
 
 function revealScores() {
+  const { players, pot } = gameState;
   document.getElementById("results").style.display = "";
   document.getElementById("player-actions").innerHTML = "";
-  gameInProgress = false;
+  const updatedGameInProgress = false;
+
+  updateDoc(gameRef, {
+    gameInProgress: updatedGameInProgress,
+  })
+
   players.forEach((player) => {
-    drawnTeams.forEach((team) => {
+    gameState.drawnTeams.forEach((team) => {
       if (teamScores[team][player.position] && player.inGame) {
         player.score += teamScores[team][player.position];
       }
@@ -383,16 +593,15 @@ function revealScores() {
 }
 
 function revealWinner(winner) {
-  const scoresText = players
+  const { players, pot } = gameState;
+  const scoresText = [...players]
     .map((p) => {
-      const activePlayers = drawnTeams
+      const activePlayers = [...gameState.drawnTeams]
         .map((team) => {
           const teamColor = teamColors[team];
-          return `<span style="color: ${
-            teamColor.primary
-          }; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${
-            activePlayersData[team][p.position]
-          }</span>`;
+          return `<span style="color: ${teamColor.primary
+            }; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${activePlayersData[team][p.position]
+            }</span>`;
         })
         .join(", ");
       const grayClass = p.inGame ? "" : "light-gray-text";
@@ -406,9 +615,9 @@ function revealWinner(winner) {
 
 function updatePotDisplay() {
   const potDisplay = document.getElementById("pot-display");
-  potDisplay.innerHTML = `<strong>Pot: </strong><strong>${pot}</strong>`;
+  potDisplay.innerHTML = `<strong>Pot: </strong><strong>${gameState.pot}</strong>`;
 
-  const stackSize = Math.min(20, Math.floor(pot / 10));
+  const stackSize = Math.min(20, Math.floor(gameState.pot / 10));
   const circles = Array.from({ length: stackSize }, (_, i) => {
     const circleSize = 20;
     return `<div style="width: ${circleSize}px; height: ${circleSize}px; background-color: gold; border-radius: 50%; display: inline-block; margin-right: 2px; box-shadow: inset 0 0 5px rgba(0,0,0,0.5);"></div>`;
@@ -418,16 +627,49 @@ function updatePotDisplay() {
 }
 
 function logGameState() {
-  console.log(`Current Player: Player ${players[currentPlayer].id}`);
-  console.log(`Current Bet: ${currentBet}`);
-  console.log(`Pot: ${pot}`);
-  console.log(`Betting Phase: ${bettingPhase}`);
-  console.log(`Drawn Teams: ${drawnTeams.join(", ")}`);
   console.log(
-    `Player Actions: ${actions
+    `Current Player: Player ${gameState.players[gameState.currentPlayer].id}`
+  );
+  console.log(`Current Bet: ${gameState.currentBet}`);
+  console.log(`Pot: ${gameState.pot}`);
+  console.log(`Betting Phase: ${gameState.bettingPhase}`);
+  console.log(`Drawn Teams: ${gameState.drawnTeams.join(", ")}`);
+  console.log(
+    `Player Actions: ${gameState.actions
       .map((action, index) => `Player ${index + 1}: ${action}`)
       .join(", ")}`
   );
+}
+
+function updateUI() {
+  const { drawnTeams, gameInProgress } = gameState;
+  const numDrawnTeamsDisplayed = document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
+  if (numDrawnTeamsDisplayed != drawnTeams.length) {
+    updateTeamUI();
+  }
+  if (!gameInProgress && document.getElementById("results").style.display == "none") {
+    revealScores();
+  }
+  if (gameInProgress && document.getElementById("results").style.display == "") {
+    document.getElementById("results").style.display = "none";
+    document.getElementById("startGame").style.display = "none";
+  }
+}
+
+function updateTeamUI() {
+  document.getElementById("teams-drawn").innerHTML = "";
+  for (const team of gameState.drawnTeams) {
+    const teamColor = teamColors[team];
+    const teamLogo = teamLogos[team];
+    const teamElement = document.createElement("li");
+    teamElement.innerHTML = `${team} <img src="${teamLogo}" alt="${team} logo" style="width: 20px; vertical-align: middle; margin-left: 5px;">`;
+    teamElement.style.listStyle = "none";
+    teamElement.style.color = teamColor.primary;
+    teamElement.style.webkitTextStroke = `0.5px ${teamColor.secondary}`;
+    teamElement.style.fontWeight = "bold";
+
+    document.getElementById("teams-drawn").appendChild(teamElement);
+  }
 }
 
 function hideGame() {
@@ -445,4 +687,17 @@ function showGame() {
 }
 
 hideGame();
-loadTeamData();
+// await loadTeamData();
+// await loadInitialGameState();
+// joinGame();
+// startGame();
+
+// Allow buttons on html to use js functions
+window.playerCheck = playerCheck
+window.playerCall = playerCall
+window.playerFold = playerFold
+window.playerRaise = playerRaise
+window.toggleRaise = toggleRaise
+window.updateRaiseAmount = updateRaiseAmount
+window.startGame = startGame
+window.deleteGame = async gameId => await deleteDoc(doc(db, "games", gameId))
