@@ -214,7 +214,7 @@ async function joinGame() {
     }),
     pot: gameState.pot + gameState.initialBet,
   });
-  }
+}
 
 function startGame() {
   const DEFAULT_BET = 10;
@@ -392,8 +392,7 @@ function playerRaise() {
     player.chips -= raiseAmount;
     updatedGameState.pot += raiseAmount;
     updatedGameState.currentBet = player.bet;
-    updatedGameState.actions.fill(false);
-    fillFolded();
+    updatedGameState.actions = updateFoldedPlayerActions(updatedGameState.actions.fill(false));
     updatedGameState.actions[currentPlayer] = true;
     updateRaiseBar();
     toggleRaise();
@@ -506,8 +505,7 @@ function drawTeam() {
     availableTeams[Math.floor(Math.random() * availableTeams.length)];
   const updatedDrawnTeams = [...gameState.drawnTeams];
   updatedDrawnTeams.push(team);
-  const updatedActions = [...gameState.actions.fill(false)];
-  fillFolded();
+  const updatedActions = updateFoldedPlayerActions(gameState.actions.fill(false));
   if (updatedDrawnTeams.length < 2) {
     updateDoc(gameRef, {
       actions: updatedActions,
@@ -533,17 +531,15 @@ function drawTeam() {
   }
 }
 
-function fillFolded() {
-  const { players, actions } = gameState
+function updateFoldedPlayerActions(actions) {
+  const updatedActions = [...actions];
+  const { players, } = gameState
   for (const curPlayer in players) {
     if (!players[curPlayer].inGame) {
-      const updatedActions = actions
       updatedActions[curPlayer] = true;
-      updateDoc(gameRef, {
-        actions: updatedActions
-      })
     }
   }
+  return updatedActions;
 }
 
 function goToNextPhaseOrGameEnd() {
