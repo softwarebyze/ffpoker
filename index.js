@@ -87,7 +87,7 @@ const activePlayersData = {
   },
 };
 const numPlayers = 4;
-const gameId = "AAAF";
+const gameId = "AAAB";
 document.getElementById('game-id').innerHTML = gameId;
 let playerId;
 let gameRef;
@@ -127,10 +127,6 @@ async function loadInitialGameState() {
   } else {
     // docSnap.data() will be undefined in this case
     console.log("No such document!");
-    // const newGameRef = await addDoc(collection(db, "games"), {
-    //   name: "Tokyo",
-    //   country: "Japan"
-    // });
     const initialGameState = {
       "initialChips": 50,
       "actions": [
@@ -195,7 +191,6 @@ async function loadTeamData() {
       teamLogos[team.team] = team.image_url;
     });
 
-    // startGame();
   } catch (error) {
     console.error("Error loading team data:", error);
   }
@@ -205,6 +200,9 @@ async function joinGame() {
   const availablePositions = [...positions];
   const positionIndex = Math.floor(Math.random() * availablePositions.length);
   const position = availablePositions.splice(positionIndex, 1)[0];
+  const numPlayers = gameState.players.length;
+  const newPlayerIndex = numPlayers;
+  document.getElementById('player-number').innerHTML = newPlayerIndex;
   await updateDoc(gameRef, {
     players: arrayUnion({
       id: playerId,
@@ -216,7 +214,7 @@ async function joinGame() {
     }),
     pot: gameState.pot + gameState.initialBet,
   });
-}
+  }
 
 function startGame() {
   const DEFAULT_BET = 10;
@@ -300,24 +298,24 @@ function updatePlayerActions() {
   document.getElementById("raiseDiv").style.display = "none";
   const { players, gameInProgress, currentPlayer, currentBet } = gameState;
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
-    // playerActions.innerHTML = `<h3>Player ${players[currentPlayer].id}'s Turn</h3>`;
-    playerActions.innerHTML = `<h3>Player ${currentPlayer}'s Turn</h3>`;
     if (players[currentPlayer].id == playerId) {
-      playerActions.innerHTML += `Your turn!<br/>`
+      playerActions.innerHTML = `<h3>Your turn!</h3>`;
+      if (players[currentPlayer].bet == currentBet) {
+        playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
+      } else { // Eventually handle not enough chips by replacing with else if
+        playerActions.innerHTML += `<button onclick="playerCall()">Call</button>`;
+      }
+      if (
+        currentBet <
+        players[currentPlayer].bet + players[currentPlayer].chips
+      ) {
+        playerActions.innerHTML += `<button onclick="toggleRaise()">Raise</button>`;
+        updateRaiseBar();
+      }
+      playerActions.innerHTML += `<button onclick="playerFold()">Fold</button>`;
+    } else {
+      playerActions.innerHTML = `<h3>Player ${currentPlayer}'s Turn</h3>`;
     }
-    if (players[currentPlayer].bet == currentBet) {
-      playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
-    } else { // Eventually handle not enough chips by replacing with else if
-      playerActions.innerHTML += `<button onclick="playerCall()">Call</button>`;
-    }
-    if (
-      currentBet <
-      players[currentPlayer].bet + players[currentPlayer].chips
-    ) {
-      playerActions.innerHTML += `<button onclick="toggleRaise()">Raise</button>`;
-      updateRaiseBar();
-    }
-    playerActions.innerHTML += `<button onclick="playerFold()">Fold</button>`;
   }
   updatePlayerInfo();
   if (!gameInProgress) {
