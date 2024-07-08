@@ -17,6 +17,8 @@ import {
   getAuth,
   onAuthStateChanged,
   signInAnonymously,
+  setPersistence,
+  browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -35,6 +37,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
 
 const positions = ["QB", "RB", "WR", "Def", "TE", "K"];
 const teams = [
@@ -84,14 +87,18 @@ const activePlayersData = {
   },
 };
 const numPlayers = 4;
-const gameId = "AAAB";
+const gameId = "AAAF";
+document.getElementById('game-id').innerHTML = gameId;
 let playerId;
 let gameRef;
 let gameState;
 
 onAuthStateChanged(auth, async (user) => {
-  if (user) {
+  console.log('authStateChanged', user);
+  if (user && user.uid) {
+    // playerId = createPlayerId() where createPlayerId creates a random ID
     playerId = user.uid;
+    document.getElementById('player-id').innerHTML = playerId;
     await loadTeamData();
     await loadInitialGameState();
     showGame();
@@ -103,6 +110,11 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 });
+
+// Existing and future Auth states are now persisted in the current
+// session only. Closing the window would clear any existing state even
+// if a user forgets to sign out.
+setPersistence(auth, browserSessionPersistence)
 
 signInAnonymously(auth);
 
@@ -290,6 +302,9 @@ function updatePlayerActions() {
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
     // playerActions.innerHTML = `<h3>Player ${players[currentPlayer].id}'s Turn</h3>`;
     playerActions.innerHTML = `<h3>Player ${currentPlayer}'s Turn</h3>`;
+    if (players[currentPlayer].id == playerId) {
+      playerActions.innerHTML += `Your turn!<br/>`
+    }
     if (players[currentPlayer].bet == currentBet) {
       playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
     } else { // Eventually handle not enough chips by replacing with else if
