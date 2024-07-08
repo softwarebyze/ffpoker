@@ -334,7 +334,7 @@ function playerCheck() {
     actions: updatedActions
   })
 
-  if (gameState.actions.every((a) => a)) {
+  if (updatedActions.every((a) => a)) {
     goToNextPhaseOrGameEnd();
   } else {
     nextPlayer();
@@ -361,7 +361,7 @@ function playerCall() {
 
     updateDoc(gameRef, updatedGameState)
 
-    if (actions.every((a) => a)) {
+    if (updatedGameState.actions.every((a) => a)) {
       goToNextPhaseOrGameEnd();
     } else {
       nextPlayer();
@@ -455,7 +455,7 @@ function playerFold() {
 
   if (updatedActivePlayers.length === 1) {
     revealScores();
-  } else if (actions.every((a) => a)) {
+  } else if (updatedActions.every((a) => a)) {
     goToNextPhaseOrGameEnd();
   } else {
     nextPlayer();
