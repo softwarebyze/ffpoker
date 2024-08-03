@@ -10,4 +10,4 @@ To install http-server:
 
 To start the server:
 
-`http-server`
+`http-server -c-1`
