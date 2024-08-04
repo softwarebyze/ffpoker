@@ -163,6 +163,9 @@ async function loadInitialGameState() {
 onSnapshot(doc(db, "games", gameId), (doc) => {
   gameState = doc.data();
   console.log("Current data: ", doc.data());
+  if (gameState == undefined) {
+    return;
+  }
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
@@ -170,6 +173,20 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
     document.getElementById("startGame").style.display = "";
   }
 });
+
+async function resetGame() {
+  deleteGame(gameId);
+  await loadTeamData();
+  await loadInitialGameState();
+  hideGame();
+  showGame();
+  if (gameState.players.length < numPlayers) {
+    await joinGame();
+  }
+  if (gameState.players.length === numPlayers) {
+    startGame();
+  }
+}
 
 let teamColors = {};
 let teamLogos = {};
@@ -200,9 +217,10 @@ async function joinGame() {
   const availablePositions = [...positions];
   const positionIndex = Math.floor(Math.random() * availablePositions.length);
   const position = availablePositions.splice(positionIndex, 1)[0];
-  const numPlayers = gameState.players.length;
-  const newPlayerIndex = numPlayers;
+  const numCurrentPlayers = gameState.players.length;
+  const newPlayerIndex = numCurrentPlayers;
   document.getElementById('player-number').innerHTML = newPlayerIndex;
+
   await updateDoc(gameRef, {
     players: arrayUnion({
       id: playerId,
@@ -214,6 +232,10 @@ async function joinGame() {
     }),
     pot: gameState.pot + gameState.initialBet,
   });
+
+  if (gameState.players.length == numPlayers) { // When the final person joins, automatically start the game
+    await startGame();
+  }
 }
 
 function startGame() {
@@ -236,6 +258,7 @@ function startGame() {
 
   document.getElementById("results").style.display = "none";
   document.getElementById("startGame").style.display = "none";
+  document.getElementById("joinGame").style.display = "none";
 
   updateDoc(gameRef, {
     players: gameState.players,
@@ -297,6 +320,9 @@ function updatePlayerActions() {
   const playerActions = document.getElementById("player-actions");
   const timer = document.getElementById("timer");
   document.getElementById("raiseDiv").style.display = "none";
+  if (gameState == undefined) {
+    return;
+  }
   const { players, gameInProgress, currentPlayer, currentBet } = gameState;
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
     if (players[currentPlayer].id == playerId) {
@@ -615,6 +641,9 @@ function revealWinner(winner) {
 
 function updatePotDisplay() {
   const potDisplay = document.getElementById("pot-display");
+  if (gameState == undefined) {
+    return;
+  }
   potDisplay.innerHTML = `<strong>Pot: </strong><strong>${gameState.pot}</strong>`;
 
   const stackSize = Math.min(20, Math.floor(gameState.pot / 10));
@@ -642,17 +671,33 @@ function logGameState() {
 }
 
 function updateUI() {
+  if (gameState == undefined) {
+    return;
+  }
+
   const { drawnTeams, gameInProgress } = gameState;
   const numDrawnTeamsDisplayed = document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
+  const any = (arr, fn = Boolean) => arr.some(fn); // Checks for any instance of true in an array
   if (numDrawnTeamsDisplayed != drawnTeams.length) {
     updateTeamUI();
   }
-  if (!gameInProgress && document.getElementById("results").style.display == "none") {
-    revealScores();
-  }
-  if (gameInProgress && document.getElementById("results").style.display == "") {
-    document.getElementById("results").style.display = "none";
-    document.getElementById("startGame").style.display = "none";
+  if (gameInProgress) {
+    if (document.getElementById("startGame").style.display == "") {
+      document.getElementById("results").style.display = "none";
+      document.getElementById("startGame").style.display = "none";
+      document.getElementById("joinGame").style.display = "none";
+    }
+  } else { // if (!gameInProgress)
+    if (gameState.players.length < numPlayers) {
+      if (document.getElementById("joinGame").style.display == "none") {
+        document.getElementById("joinGame").style.display = "";
+      } else { // if (document.getElementById("joinGame").style.display == "")
+        document.getElementById("results").style.display = "none";
+      }
+    } else if (document.getElementById("results").style.display == "none" && any(gameState.actions)) { // gameState.players.length >= numPlayers
+      revealScores();
+      document.getElementById("joinGame").style.display = "none";
+    }
   }
 }
 
@@ -676,6 +721,11 @@ const interval = setInterval(updateTimer, 1000);
 
 function updateTimer() {
   const timer = document.getElementById("timer");
+
+  if (gameState == undefined || !gameState.gameInProgress) {
+    timer.style.display = "none";
+    return;
+  }
 
   if (timer.style.display == "none")
     return;
@@ -712,6 +762,7 @@ function showGame() {
   document.getElementById("team-info").style.display = "";
   document.getElementById("players-section").style.display = "";
   document.getElementById("startGame").style.display = "none";
+  document.getElementById("joinGame").style.display = "none";
 }
 
 hideGame();
@@ -728,4 +779,6 @@ window.playerRaise = playerRaise
 window.toggleRaise = toggleRaise
 window.updateRaiseAmount = updateRaiseAmount
 window.startGame = startGame
+window.resetGame = resetGame
+window.joinGame = joinGame
 window.deleteGame = async gameId => await deleteDoc(doc(db, "games", gameId))
