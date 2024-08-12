@@ -4,10 +4,53 @@
     <meta charset="UTF-8" />
     <title>Fantasy Football Texas Hold'em</title>
     <style>
+      @font-face {
+        font-family: 'Freshman';
+        src: url('Freshman.ttf') format('truetype');
+      }
+
       body {
         font-family: Arial, sans-serif;
         text-align: center;
+        background-color: #013220;
+        color: white;
         margin: 20px;
+      }
+
+      h1, #team-info h2, #results h2 {
+        font-family: 'Freshman', Arial, sans-serif;
+        -webkit-text-stroke: 0.2px black; /* Even thinner black border */
+        letter-spacing: -1px; /* Reduce space between letters */
+      }
+
+      #teams-drawn li {
+        font-family: 'Freshman', Arial, sans-serif; /* Ensure team names use Freshman font */
+        margin-bottom: 15px; /* Increase vertical space between teams */
+        -webkit-text-stroke: 0.2px black; /* Thinner black border */
+      }
+
+      .player-info strong {
+        font-family: 'Freshman', Arial, sans-serif;
+        -webkit-text-stroke: 0.2px black; /* Thinner black border */
+        font-size: 1.2em;
+        font-weight: bold;
+      }
+
+      .tooltip .tooltiptext, #final-score span, #final-score {
+        font-family: 'Freshman', Arial, sans-serif;
+      }
+
+      #final-score {
+        font-family: Arial, sans-serif;
+      }
+
+      #final-score {
+        color: white;
+        -webkit-text-stroke: 0.2px black; /* Thinner black border for winner */
+      }
+
+      h1 {
+        margin-bottom: 20px;
       }
 
       .player-info,
