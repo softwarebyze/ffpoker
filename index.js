@@ -107,8 +107,20 @@ async function loadCSVData() {
   });
 }
 
+function getGameId() {
+  const searchParams = new URLSearchParams(window.location.search);
+
+  if (!searchParams.has('gameId') || searchParams.get('gameId') == "") {
+    console.log ('gameId is not provided');
+    return "tempCode";
+  }
+  else {
+    return searchParams.get('gameId');
+  }
+}
+
 const numPlayers = 4;
-const gameId = "AAAB";
+const gameId = getGameId();
 document.getElementById('game-id').innerHTML = gameId;
 let playerId;
 let gameRef;
