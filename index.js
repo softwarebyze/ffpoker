@@ -41,51 +41,72 @@ const auth = getAuth(app);
 
 const positions = ["QB", "RB", "WR", "Def", "TE", "K"];
 const teams = [
-  "Tennessee Titans",
-  "Kansas City Chiefs",
-  "San Francisco 49ers",
-  "Dallas Cowboys",
+    "Arizona Cardinals",
+    "Atlanta Falcons",
+    "Baltimore Ravens",
+    "Buffalo Bills",
+    "Carolina Panthers",
+    "Chicago Bears",
+    "Cincinnati Bengals",
+    "Cleveland Browns",
+    "Dallas Cowboys",
+    "Denver Broncos",
+    "Detroit Lions",
+    "Green Bay Packers",
+    "Houston Texans",
+    "Indianapolis Colts",
+    "Jacksonville Jaguars",
+    "Kansas City Chiefs",
+    "Las Vegas Raiders",
+    "Los Angeles Chargers",
+    "Los Angeles Rams",
+    "Miami Dolphins",
+    "Minnesota Vikings",
+    "New England Patriots",
+    "New Orleans Saints",
+    "New York Giants",
+    "New York Jets",
+    "Philadelphia Eagles",
+    "Pittsburgh Steelers",
+    "San Francisco 49ers",
+    "Seattle Seahawks",
+    "Tampa Bay Buccaneers",
+    "Tennessee Titans",
+    "Washington Commanders"
 ];
-const teamScores = {
-  "Tennessee Titans": { RB: 25, QB: 12, WR: 10, TE: 15, Def: 3, K: 12 },
-  "Kansas City Chiefs": { RB: 16, QB: 30, WR: 8, TE: 20, Def: 2, K: 1 },
-  "San Francisco 49ers": { RB: 30, QB: 18, WR: 20, TE: 16, Def: 20, K: 2 },
-  "Dallas Cowboys": { RB: 10, QB: 20, WR: 23, TE: 12, Def: 14, K: 8 },
-};
-const activePlayersData = {
-  "Tennessee Titans": {
-    RB: "Derrick Henry",
-    QB: "Will Levis",
-    WR: "DeAndre Hopkins",
-    TE: "Chigoziem Okonkwo",
-    Def: "Titans Defense",
-    K: "Nick Folk",
-  },
-  "Kansas City Chiefs": {
-    RB: "Isaiah Pacheco",
-    QB: "Patrick Mahomes",
-    WR: "Skyy Moore",
-    TE: "Travis Kelce",
-    Def: "Chiefs Defense",
-    K: "Harrison Butker",
-  },
-  "San Francisco 49ers": {
-    RB: "Christian McCaffrey",
-    QB: "Brock Purdy",
-    WR: "Deebo Samuel",
-    TE: "George Kittle",
-    Def: "49ers Defense",
-    K: "Jake Moody",
-  },
-  "Dallas Cowboys": {
-    RB: "Ezekiel Elliott",
-    QB: "Dak Prescott",
-    WR: "CeeDee Lamb",
-    TE: "Jake Ferguson",
-    Def: "Cowboys Defense",
-    K: "Brandon Aubrey",
-  },
-};
+
+let activePlayersData = {};
+let teamScores = {};
+
+async function loadCSVData() {
+  const response = await fetch('nfl_rosters_2024.csv');
+  const csvText = await response.text();
+
+  const lines = csvText.split('\n');
+  const headers = lines[0].split(',');
+
+  lines.slice(1).forEach(line => {
+    const values = line.split(',');
+    const team = values[headers.indexOf('Team')];
+    activePlayersData[team] = {
+      QB: values[headers.indexOf('QB')],
+      RB: values[headers.indexOf('RB')],
+      WR: values[headers.indexOf('WR')],
+      TE: values[headers.indexOf('TE')],
+      Def: values[headers.indexOf('Defense')],
+      K: values[headers.indexOf('K')],
+    };
+    teamScores[team] = {
+      QB: parseInt(values[headers.indexOf('QB Points')], 10) || 0,
+      RB: parseInt(values[headers.indexOf('RB Points')], 10) || 0,
+      WR: parseInt(values[headers.indexOf('WR Points')], 10) || 0,
+      TE: parseInt(values[headers.indexOf('TE Points')], 10) || 0,
+      Def: parseInt(values[headers.indexOf('Defense Points')], 10) || 0,
+      K: parseInt(values[headers.indexOf('K Points')], 10) || 0,
+    };
+  });
+}
+
 const numPlayers = 4;
 const gameId = "AAAB";
 document.getElementById('game-id').innerHTML = gameId;
@@ -94,14 +115,16 @@ let gameRef;
 let gameState;
 
 onAuthStateChanged(auth, async (user) => {
-  console.log('authStateChanged', user);
   if (user && user.uid) {
-    // playerId = createPlayerId() where createPlayerId creates a random ID
     playerId = user.uid;
     document.getElementById('player-id').innerHTML = playerId;
+
+    await loadCSVData(); // Ensure CSV data is loaded before continuing
+
     await loadTeamData();
     await loadInitialGameState();
     showGame();
+
     if (gameState.players.length < numPlayers) {
       await joinGame();
     }
@@ -110,6 +133,8 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 });
+
+
 
 // Existing and future Auth states are now persisted in the current
 // session only. Closing the window would clear any existing state even
@@ -247,7 +272,7 @@ function startGame() {
   gameState.players = updatedPlayers;
   gameState.drawnTeams = [];
   gameState.currentPlayer = 0;
-  gameState.pot = 0;
+  gameState.pot = 40;
   gameState.currentBet = gameState.initialBet;
   gameState.activePlayers = [...Array(numPlayers).keys()];
   gameState.bettingPhase = 1;
@@ -618,26 +643,26 @@ function revealScores() {
   document.getElementById("startGame").style.display = "";
 }
 
+
 function revealWinner(winner) {
   const { players, pot } = gameState;
-  const scoresText = [...players]
-    .map((p) => {
-      const activePlayers = [...gameState.drawnTeams]
-        .map((team) => {
-          const teamColor = teamColors[team];
-          return `<span style="color: ${teamColor.primary
-            }; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${activePlayersData[team][p.position]
-            }</span>`;
-        })
-        .join(", ");
-      const grayClass = p.inGame ? "" : "light-gray-text";
-      return `<span class="${grayClass}">Player ${p.id}: ${p.score} points, Chips: ${p.chips}, Active Football Players: ${activePlayers}</span>`;
-    })
-    .join("<br>");
+  const scoresText = players.map((p, index) => {
+    const activePlayers = gameState.drawnTeams.map((team) => {
+      const playerName = activePlayersData[team][p.position];
+      const playerPoints = teamScores[team][p.position];
+      const teamColor = teamColors[team];
+      return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${playerName} (${playerPoints} pts)</span>`;
+    }).join(", ");
+    const grayClass = p.inGame ? "" : "light-gray-text";
+    return `<span class="${grayClass}">Player ${index + 1}: ${p.score} points, Chips: ${p.chips}, Active Football Players: ${activePlayers}</span>`;
+  }).join("<br>");
+
+  const winnerIndex = players.indexOf(winner) + 1;
   document.getElementById(
     "final-score"
-  ).innerHTML = `Scores:<br>${scoresText}<br><br>Winner: <strong style="color: darkgreen; font-size: 1.2em;">Player ${winner.id}</strong> with ${winner.score} points! Pot: ${pot}`;
+  ).innerHTML = `Scores:<br>${scoresText}<br><br>Winner: <strong style="color: gold; font-size: 1.2em; font-family: 'Freshman'">Player ${winnerIndex}</strong> with ${winner.score} points! Pot: ${pot}`;
 }
+
 
 function updatePotDisplay() {
   const potDisplay = document.getElementById("pot-display");
