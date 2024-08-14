@@ -123,7 +123,7 @@ function getUsername() {
   const searchParams = new URLSearchParams(window.location.search);
 
   if (!searchParams.has('username') || searchParams.get('username') == "") {
-    console.log ('username is not provided');
+    location.replace(`${window.location.origin}/username${window.location.search}`)
     return "";
   }
   else {
@@ -276,9 +276,6 @@ async function joinGame() {
   const availablePositions = [...positions];
   const positionIndex = Math.floor(Math.random() * availablePositions.length);
   const position = availablePositions.splice(positionIndex, 1)[0];
-  const numCurrentPlayers = gameState.players.length;
-  const newPlayerIndex = numCurrentPlayers;
-  document.getElementById('player-number').innerHTML = newPlayerIndex + 1;
 
   await updateDoc(gameRef, {
     players: arrayUnion({
@@ -291,6 +288,10 @@ async function joinGame() {
     }),
     pot: gameState.pot + gameState.initialBet,
   });
+  
+  const numCurrentPlayers = gameState.players.length;
+  const newPlayerIndex = numCurrentPlayers;
+  document.getElementById('player-number').innerHTML = newPlayerIndex;
 
   if (gameState.players.length == numPlayers) { // When the final person joins, automatically start the game
     await startGame();
