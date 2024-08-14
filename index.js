@@ -119,9 +119,22 @@ function getGameId() {
   }
 }
 
+function getUsername() {
+  const searchParams = new URLSearchParams(window.location.search);
+
+  if (!searchParams.has('username') || searchParams.get('username') == "") {
+    console.log ('username is not provided');
+    return "";
+  }
+  else {
+    return searchParams.get('username');
+  }
+}
+
 const numPlayers = 4;
 const gameId = getGameId();
 document.getElementById('game-id').innerHTML = gameId;
+const username = getUsername();
 let playerId;
 let gameRef;
 let gameState;
@@ -130,6 +143,15 @@ onAuthStateChanged(auth, async (user) => {
   if (user && user.uid) {
     playerId = user.uid;
     document.getElementById('player-id').innerHTML = playerId;
+    if (username == "") {
+      document.getElementById('username-span').style.display = "none";
+    } else { // If the username exists
+      document.getElementById('username').innerHTML = username;
+      document.getElementById('username').style.display = "";
+    }
+
+    document.getElementById('invite-link-clickable').href = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`
+    document.getElementById('invite-link-clickable').innerHTML = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`
 
     await loadCSVData(); // Ensure CSV data is loaded before continuing
 
@@ -256,7 +278,7 @@ async function joinGame() {
   const position = availablePositions.splice(positionIndex, 1)[0];
   const numCurrentPlayers = gameState.players.length;
   const newPlayerIndex = numCurrentPlayers;
-  document.getElementById('player-number').innerHTML = newPlayerIndex;
+  document.getElementById('player-number').innerHTML = newPlayerIndex + 1;
 
   await updateDoc(gameRef, {
     players: arrayUnion({
@@ -296,6 +318,7 @@ function startGame() {
   document.getElementById("results").style.display = "none";
   document.getElementById("startGame").style.display = "none";
   document.getElementById("joinGame").style.display = "none";
+  document.getElementById("invite-link-div").style.display = "none";
 
   updateDoc(gameRef, {
     players: gameState.players,
@@ -675,6 +698,12 @@ function revealWinner(winner) {
   ).innerHTML = `Scores:<br>${scoresText}<br><br>Winner: <strong style="color: gold; font-size: 1.2em; font-family: 'Freshman'">Player ${winnerIndex}</strong> with ${winner.score} points! Pot: ${pot}`;
 }
 
+function copyInviteLink() {
+  const inviteLink = document.getElementById('invite-link-clickable').href;
+  navigator.clipboard.writeText(inviteLink);
+
+  alert(`Copied invite link: ${inviteLink}`)
+}
 
 function updatePotDisplay() {
   const potDisplay = document.getElementById("pot-display");
@@ -723,17 +752,20 @@ function updateUI() {
       document.getElementById("results").style.display = "none";
       document.getElementById("startGame").style.display = "none";
       document.getElementById("joinGame").style.display = "none";
+      document.getElementById("invite-link-div").style.display = "none";
     }
   } else { // if (!gameInProgress)
     if (gameState.players.length < numPlayers) {
       if (document.getElementById("joinGame").style.display == "none") {
         document.getElementById("joinGame").style.display = "";
+        document.getElementById("invite-link-div").style.display = "";
       } else { // if (document.getElementById("joinGame").style.display == "")
         document.getElementById("results").style.display = "none";
       }
     } else if (document.getElementById("results").style.display == "none" && any(gameState.actions)) { // gameState.players.length >= numPlayers
       revealScores();
       document.getElementById("joinGame").style.display = "none";
+      document.getElementById("invite-link-div").style.display = "none";
     }
   }
 }
@@ -800,6 +832,7 @@ function showGame() {
   document.getElementById("players-section").style.display = "";
   document.getElementById("startGame").style.display = "none";
   document.getElementById("joinGame").style.display = "none";
+  document.getElementById("invite-link-div").style.display = "none";
 }
 
 hideGame();
@@ -818,4 +851,5 @@ window.updateRaiseAmount = updateRaiseAmount
 window.startGame = startGame
 window.resetGame = resetGame
 window.joinGame = joinGame
+window.copyInviteLink = copyInviteLink
 window.deleteGame = async gameId => await deleteDoc(doc(db, "games", gameId))
