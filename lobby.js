@@ -36,19 +36,18 @@ const gamesCollection = collection(db, 'games');
 const querySnapshot = await getDocs(gamesCollection);
 const numPlayers = 4; // This may be stored in each game's gameState later, but for now manually defined
 
-try {
-    querySnapshot.forEach((doc) => {
-        const gameData = doc.data();
-        const gameState = gameData.gameState;
-        const gameId = doc.id;
-        // Access game state here
-        console.log(`${gameId}`, gameData['players'])
-    });
+// try {
+//     querySnapshot.forEach((doc) => {
+//         const gameData = doc.data();
+//         const gameState = gameData.gameState;
+//         const gameId = doc.id;
+//         // Access game state here
+//         console.log(`${gameId}`, gameData['players'])
+//     });
 
-} catch (error) {
-    console.error("Error getting documents: ", error);
-}
-
+// } catch (error) {
+//     console.error("Error getting documents: ", error);
+// }
 
 
 function addUsername() {
