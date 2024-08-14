@@ -31,7 +31,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 // const auth = getAuth(app);
 
-// Assuming db is your Firestore instance
 const gamesCollection = collection(db, 'games');
 
 const querySnapshot = await getDocs(gamesCollection);
@@ -43,7 +42,7 @@ try {
         const gameState = gameData.gameState;
         const gameId = doc.id;
         // Access game state here
-        // console.log(`gameId: ${gameId}\ngameData: ${gameData}\ngameState: ${gameState}`);
+        console.log(`${gameId}`, gameData['players'])
     });
 
 } catch (error) {
@@ -78,19 +77,39 @@ function joinOrCreateRandomGame() {
     });
 
     const username = document.getElementById('user-text').value;
-    const address = window.location.href;
+    const address = window.location.origin;
 
     if (joinableGames.length == 0) { // Currently no system to make sure the gameId hasn't been taken
         const gameId = getCharacterString(6);
         console.log(`${gameId} was randomly generated for the gameId`)
-        location.assign(`${address}ffpoker?gameId=${gameId}&username=${username}`)
+        location.assign(`${address}/ffpoker?gameId=${gameId}&username=${username}`)
     } else {
         const gameId = joinableGames[Math.floor(Math.random() * joinableGames.length)]
         console.log(`${gameId} was randomly selected from the availible games`)
-        location.assign(`${address}ffpoker?gameId=${gameId}&username=${username}`)
+        location.assign(`${address}/ffpoker?gameId=${gameId}&username=${username}`)
     }
 
+}
 
+function createPrivateGame() {
+    try {
+        const gameId = getCharacterString(6);
+        // Determine if a gameId is taken
+
+        //
+
+        const username = document.getElementById('user-text').value;
+        const address = window.location.origin;
+
+        const inviteLink = `${address}/ffpoker?gameId=${gameId.toString()}`;
+        navigator.clipboard.writeText(inviteLink);
+
+        alert(`Copied invite link: ${inviteLink}`)
+
+        location.assign(`${address}/ffpoker?gameId=${gameId.toString()}&username=${username}`)
+    } catch (error) {
+        console.error("Error getting documents: ", error);
+    }
 }
 
 function getCharacterString(length) {
@@ -99,8 +118,10 @@ function getCharacterString(length) {
     for (let i = 0; i < length; i++) {
         finalCharArr.push(charList.charAt(Math.floor(Math.random() * charList.length)))
     }
-    return finalCharArr.toString();
+    const finalChar = finalCharArr.toString().replaceAll(",", "");
+    return finalChar;
 }
 
 window.addUsername = addUsername;
 window.joinOrCreateRandomGame = joinOrCreateRandomGame;
+window.createPrivateGame = createPrivateGame;
