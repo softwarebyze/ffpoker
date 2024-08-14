@@ -1,29 +1,29 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore,
-  doc,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  onSnapshot,
-  collection,
-  getDocs,
-  getDoc,
-  arrayUnion,
-  setDoc
+    getFirestore,
+    doc,
+    addDoc,
+    deleteDoc,
+    updateDoc,
+    onSnapshot,
+    collection,
+    getDocs,
+    getDoc,
+    arrayUnion,
+    setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyB-w82pBn3TWhbfz0dUcXcTKXk9Z2OZXWE",
-  authDomain: "ffpoker-20a8e.firebaseapp.com",
-  projectId: "ffpoker-20a8e",
-  storageBucket: "ffpoker-20a8e.appspot.com",
-  messagingSenderId: "409640502099",
-  appId: "1:409640502099:web:d7096f9f32ad152b80d7a6",
+    apiKey: "AIzaSyB-w82pBn3TWhbfz0dUcXcTKXk9Z2OZXWE",
+    authDomain: "ffpoker-20a8e.firebaseapp.com",
+    projectId: "ffpoker-20a8e",
+    storageBucket: "ffpoker-20a8e.appspot.com",
+    messagingSenderId: "409640502099",
+    appId: "1:409640502099:web:d7096f9f32ad152b80d7a6",
 };
 
 // Initialize Firebase
@@ -38,19 +38,19 @@ const querySnapshot = await getDocs(gamesCollection);
 const numPlayers = 4; // This may be stored in each game's gameState later, but for now manually defined
 
 try {
-  querySnapshot.forEach((doc) => {
-    const gameData = doc.data();
-    const gameState = gameData.gameState;
-    const gameId = doc.id;
-    // Access game state here
-    // console.log(`gameId: ${gameId}\ngameData: ${gameData}\ngameState: ${gameState}`);
-  });
-  
+    querySnapshot.forEach((doc) => {
+        const gameData = doc.data();
+        const gameState = gameData.gameState;
+        const gameId = doc.id;
+        // Access game state here
+        // console.log(`gameId: ${gameId}\ngameData: ${gameData}\ngameState: ${gameState}`);
+    });
+
 } catch (error) {
-  console.error("Error getting documents: ", error);
+    console.error("Error getting documents: ", error);
 }
 
-  
+
 
 function addUsername() {
     const userText = document.getElementById('user-text').value;
@@ -75,17 +75,21 @@ function joinOrCreateRandomGame() {
         if (players.length < numPlayers) {
             joinableGames.push(gameId)
         }
-      });
-    
+    });
+
+    const username = document.getElementById('user-text').value;
+
     if (joinableGames.length == 0) { // Currently no system to make sure the gameId hasn't been taken
         const gameId = getCharacterString(6);
         console.log(`${gameId} was randomly generated for the gameId`)
+        location.assign(window.location.href + 'ffpoker?gameId=' + gameId + '&username=' + username)
     } else {
         const gameId = joinableGames[Math.floor(Math.random() * joinableGames.length)]
         console.log(`${gameId} was randomly selected from the availible games`)
+        location.assign(window.location.href + 'ffpoker?gameId=' + gameId + + '&username=' + username)
     }
 
-    
+
 }
 
 function getCharacterString(length) {
