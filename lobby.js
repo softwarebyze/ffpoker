@@ -78,15 +78,16 @@ function joinOrCreateRandomGame() {
     });
 
     const username = document.getElementById('user-text').value;
+    const address = window.location.href;
 
     if (joinableGames.length == 0) { // Currently no system to make sure the gameId hasn't been taken
         const gameId = getCharacterString(6);
         console.log(`${gameId} was randomly generated for the gameId`)
-        location.assign(window.location.href + 'ffpoker?gameId=' + gameId + '&username=' + username)
+        location.assign(`${address}ffpoker?gameId=${gameId}&username=${username}`)
     } else {
         const gameId = joinableGames[Math.floor(Math.random() * joinableGames.length)]
         console.log(`${gameId} was randomly selected from the availible games`)
-        location.assign(window.location.href + 'ffpoker?gameId=' + gameId + + '&username=' + username)
+        location.assign(`${address}ffpoker?gameId=${gameId}&username=${username}`)
     }
 
 
