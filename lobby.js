@@ -5,6 +5,11 @@ import {
   getDocs,
   getFirestore,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  updateProfile,
+  getAuth,
+  signInAnonymously,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -19,20 +24,36 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-// const auth = getAuth(app);
+const auth = getAuth(app);
 
 const gamesCollection = collection(db, "games");
 
 const querySnapshot = await getDocs(gamesCollection);
 const numPlayers = 4; // This may be stored in each game's gameState later, but for now manually defined
 
-function addUsername() {
+if (!auth.currentUser) {
+  signInAnonymously(auth);
+}
+
+if (auth.currentUser?.displayName) {
+  document.getElementById("user-text").value = auth.currentUser.displayName;
+  document.getElementById("create-username").style.display = "none";
+  document.getElementById("join-create-game").style.display = "";
+  document.getElementById("username").innerHTML = auth.currentUser.displayName;
+}
+
+async function addUsername() {
   const userText = document.getElementById("user-text").value;
   if (userText == "") {
     document.getElementById("error-text").innerHTML =
       "Make sure to provide a username";
   } else {
+    if (!auth.currentUser) alert("No user");
+    await updateProfile(auth.currentUser, {
+      displayName: userText,
+    });
     document.getElementById("error-text").innerHTML = "";
+    document.getElementById("username").innerHTML = userText;
     document.getElementById("create-username").style.display = "none";
     document.getElementById("join-create-game").style.display = "";
   }
@@ -51,19 +72,18 @@ function joinOrCreateRandomGame() {
     }
   });
 
-  const username = document.getElementById("user-text").value;
   const address = window.location.origin;
 
   if (joinableGames.length == 0) {
     // Currently no system to make sure the gameId hasn't been taken
     const gameId = getCharacterString(6);
     console.log(`${gameId} was randomly generated for the gameId`);
-    location.assign(`${address}/ffpoker?gameId=${gameId}&username=${username}`);
+    location.assign(`${address}/ffpoker?gameId=${gameId}`);
   } else {
     const gameId =
       joinableGames[Math.floor(Math.random() * joinableGames.length)];
-    console.log(`${gameId} was randomly selected from the availible games`);
-    location.assign(`${address}/ffpoker?gameId=${gameId}&username=${username}`);
+    console.log(`${gameId} was randomly selected from the available games`);
+    location.assign(`${address}/ffpoker?gameId=${gameId}`);
   }
 }
 
@@ -73,8 +93,6 @@ function createPrivateGame() {
     // Determine if a gameId is taken
 
     //
-
-    const username = document.getElementById("user-text").value;
     const address = window.location.origin;
 
     const inviteLink = `${address}/ffpoker?gameId=${gameId.toString()}`;
@@ -82,9 +100,7 @@ function createPrivateGame() {
 
     alert(`Copied invite link: ${inviteLink}`);
 
-    location.assign(
-      `${address}/ffpoker?gameId=${gameId.toString()}&username=${username}`
-    );
+    location.assign(`${address}/ffpoker?gameId=${gameId.toString()}`);
   } catch (error) {
     console.error("Error getting documents: ", error);
   }
