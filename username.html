@@ -1,46 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fantasy Football Texas Hold'em</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 50px;
+      }
 
-<head>
-  <meta charset="UTF-8" />
-  <title>Fantasy Football Texas Hold'em</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 50px;
-    }
+      .player-info,
+      .team-info {
+        margin: 20px;
+        padding: 10px;
+        border: 1px solid black;
+        display: inline-block;
+        width: 200px;
+        text-align: left;
+      }
 
-    .player-info,
-    .team-info {
-      margin: 20px;
-      padding: 10px;
-      border: 1px solid black;
-      display: inline-block;
-      width: 200px;
-      text-align: left;
-    }
+      .action-buttons button {
+        margin: 5px;
+      }
+    </style>
+  </head>
 
-    .action-buttons button {
-      margin: 5px;
-    }
-  </style>
-</head>
+  <body>
+    <h1>Fantasy Football Texas Hold'em</h1>
 
-<body>
-  <h1>Fantasy Football Texas Hold'em</h1>
-
-  <div id="create-username">
-    Enter your username:
-    <input id="user-text" type="text" placeholder="Example: suzy" />
-    <br />
-    <div>
-      <button onclick="addUsername()">Submit username</button>
+    <div id="create-username">
+      Enter your username:
+      <input id="user-text" type="text" placeholder="Example: suzy" />
+      <br />
+      <div>
+        <button onclick="addUsername()">Submit username</button>
+      </div>
+      <span id="error-text"></span>
     </div>
-    <span id="error-text"></span>
-  </div>
 
-  <script type="module" src="username.js"></script>
-</body>
-
+    <script type="module" src="username.js"></script>
+  </body>
 </html>
