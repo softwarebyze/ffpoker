@@ -8,6 +8,7 @@ import {
 import {
   updateProfile,
   getAuth,
+  signInAnonymously,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
@@ -29,6 +30,10 @@ const gamesCollection = collection(db, "games");
 
 const querySnapshot = await getDocs(gamesCollection);
 const numPlayers = 4; // This may be stored in each game's gameState later, but for now manually defined
+
+if (!auth.currentUser) {
+  signInAnonymously(auth);
+}
 
 if (auth.currentUser?.displayName) {
   document.getElementById("user-text").value = auth.currentUser.displayName;
