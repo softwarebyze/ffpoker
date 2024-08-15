@@ -29,7 +29,8 @@ const gamesCollection = collection(db, "games");
 
 const querySnapshot = await getDocs(gamesCollection);
 const numPlayers = 4; // This may be stored in each game's gameState later, but for now manually defined
-if (auth.currentUser.displayName) {
+
+if (auth.currentUser?.displayName) {
   document.getElementById("user-text").value = auth.currentUser.displayName;
   document.getElementById("create-username").style.display = "none";
   document.getElementById("join-create-game").style.display = "";
