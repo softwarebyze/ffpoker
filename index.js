@@ -806,11 +806,6 @@ function updateUI() {
   if (gameState == undefined) {
     return;
   }
-  document.getElementById("action-history").innerText = JSON.stringify(
-    gameState.history,
-    null,
-    2
-  );
   const { drawnTeams, gameInProgress } = gameState;
   const numDrawnTeamsDisplayed =
     document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
