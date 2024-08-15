@@ -347,7 +347,7 @@ function updatePlayerInfo() {
   playersSection.innerHTML = "";
   gameState.players.forEach((player) => {
     const isActive =
-      player.id === gameState.players[gameState.currentPlayer].id;
+      gameState.gameInProgress && player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
     const activatedPlayers = getActivatedPlayers(player.position);
