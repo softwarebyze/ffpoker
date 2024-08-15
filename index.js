@@ -346,11 +346,13 @@ function updatePlayerInfo() {
   const playersSection = document.getElementById("players-section");
   playersSection.innerHTML = "";
   gameState.players.forEach((player) => {
+    const isActive =
+      player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
     const activatedPlayers = getActivatedPlayers(player.position);
     playersSection.innerHTML += `
-      <div class="player-info ${grayClass}">
+      <div class="player-info ${grayClass} ${isActive ? "active" : ""}">
         <strong>${player.username}${status ? ` (${status})` : ""}</strong>
         <ul>
           <li class="tooltip"><strong>${player.position}</strong>
