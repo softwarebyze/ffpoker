@@ -116,36 +116,29 @@ function getGameId() {
 
 function getUsername() {
   const searchParams = new URLSearchParams(window.location.search);
-
-  if (!searchParams.has("username") || searchParams.get("username") == "") {
-    location.replace(
-      `${window.location.origin}/username${window.location.search}`
-    );
+  console.log(auth.currentUser, { auth });
+  if (!auth.currentUser?.displayName) {
+    // location.replace(
+    //   `${window.location.origin}/username${window.location.search}`
+    // );
     return "";
   } else {
-    return searchParams.get("username");
+    return auth.currentUser?.displayName;
   }
 }
 
 const numPlayers = 4;
 const gameId = getGameId();
 document.getElementById("game-id").innerHTML = gameId;
-const username = getUsername();
 let playerId;
 let gameRef;
 let gameState;
 
 onAuthStateChanged(auth, async (user) => {
-  if (user && user.uid) {
+  if (user && user.uid && user.displayName) {
     playerId = user.uid;
     document.getElementById("player-id").innerHTML = playerId;
-    if (username == "") {
-      document.getElementById("username-span").style.display = "none";
-    } else {
-      // If the username exists
-      document.getElementById("username").innerHTML = username;
-      document.getElementById("username").style.display = "";
-    }
+    document.getElementById("username").innerHTML = user.displayName;
 
     document.getElementById(
       "invite-link-clickable"
@@ -166,6 +159,10 @@ onAuthStateChanged(auth, async (user) => {
     if (gameState.players.length === numPlayers) {
       startGame();
     }
+  } else {
+    location.replace(
+      `${window.location.origin}/username${window.location.search}`
+    );
   }
 });
 
@@ -175,6 +172,7 @@ onAuthStateChanged(auth, async (user) => {
 setPersistence(auth, browserSessionPersistence);
 
 signInAnonymously(auth);
+//const username = getUsername();
 
 async function loadInitialGameState() {
   gameRef = doc(db, "games", gameId);
@@ -207,6 +205,9 @@ async function loadInitialGameState() {
       initialBet: 10,
       currentBet: 10,
       drawnTeams: [],
+      // history: [
+      //   {}
+      // ]
     };
     await setDoc(doc(db, "games", gameId), initialGameState);
   }
@@ -269,9 +270,14 @@ async function joinGame() {
   const positionIndex = Math.floor(Math.random() * availablePositions.length);
   const position = availablePositions.splice(positionIndex, 1)[0];
 
+  for (let player of gameState.players) {
+    if (player.id == playerId) return;
+  }
+
   await updateDoc(gameRef, {
     players: arrayUnion({
       id: playerId,
+      username: auth.currentUser.displayName,
       position,
       score: 0,
       inGame: true,
@@ -310,6 +316,7 @@ function startGame() {
   gameState.activePlayers = [...Array(numPlayers).keys()];
   gameState.bettingPhase = 1;
   gameState.actions = new Array(numPlayers).fill(false);
+  gameState.history = [];
 
   document.getElementById("teams-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
@@ -329,6 +336,7 @@ function startGame() {
     bettingPhase: gameState.bettingPhase,
     actions: gameState.actions,
     gameInProgress: gameState.gameInProgress,
+    history: gameState.history,
   });
 
   logGameState(); // Log initial game state
@@ -337,13 +345,13 @@ function startGame() {
 function updatePlayerInfo() {
   const playersSection = document.getElementById("players-section");
   playersSection.innerHTML = "";
-  gameState.players.forEach((player, index) => {
+  gameState.players.forEach((player) => {
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
     const activatedPlayers = getActivatedPlayers(player.position);
     playersSection.innerHTML += `
       <div class="player-info ${grayClass}">
-        <strong>Player ${index + 1}${status ? ` (${status})` : ""}</strong>
+        <strong>${player.username}${status ? ` (${status})` : ""}</strong>
         <ul>
           <li class="tooltip"><strong>${player.position}</strong>
             <span class="tooltiptext">${activatedPlayers}</span>
@@ -404,7 +412,7 @@ function updatePlayerActions() {
       playerActions.innerHTML += `<button onclick="playerFold()">Fold</button>`;
     } else {
       timer.style.display = "none";
-      playerActions.innerHTML = `<h3>Player ${currentPlayer}'s Turn</h3>`;
+      playerActions.innerHTML = `<h3>Player ${currentPlayer + 1}'s Turn</h3>`;
     }
   }
   updatePlayerInfo();
@@ -413,6 +421,7 @@ function updatePlayerActions() {
   }
 }
 
+// check
 function playerCheck() {
   const { currentPlayer } = gameState;
 
@@ -422,6 +431,13 @@ function playerCheck() {
   // update the state in the db
   updateDoc(gameRef, {
     actions: updatedActions,
+    history: arrayUnion({
+      action: "check",
+      playerId: gameState.players[currentPlayer].id,
+      playerNumber: currentPlayer,
+      playerName: gameState.players[currentPlayer].username,
+      bettingPhase: gameState.bettingPhase,
+    }),
   });
 
   if (updatedActions.every((a) => a)) {
@@ -432,6 +448,7 @@ function playerCheck() {
   logGameState();
 }
 
+// call
 function playerCall() {
   const { players, currentPlayer, currentBet, actions } = gameState;
   const player = players[currentPlayer];
@@ -449,7 +466,18 @@ function playerCall() {
 
     updatedGameState.actions[currentPlayer] = true;
 
-    updateDoc(gameRef, updatedGameState);
+    updateDoc(gameRef, {
+      ...updatedGameState,
+      history: arrayUnion({
+        action: "call",
+        playerId: player.id,
+        playerNumber: currentPlayer,
+        playerName: player.username,
+        amount: diff,
+        chips: updatedPlayer.chips,
+        bettingPhase: gameState.bettingPhase,
+      }),
+    });
 
     if (updatedGameState.actions.every((a) => a)) {
       goToNextPhaseOrGameEnd();
@@ -469,6 +497,7 @@ function toggleRaise() {
   }
 }
 
+// raise
 function playerRaise() {
   const { players, currentPlayer, pot } = gameState;
 
@@ -491,7 +520,17 @@ function playerRaise() {
 
     updatedGameState.players[currentPlayer] = player;
 
-    updateDoc(gameRef, updatedGameState);
+    updateDoc(gameRef, {
+      ...updatedGameState,
+      history: arrayUnion({
+        action: "raise",
+        playerId: player.id,
+        playerNumber: currentPlayer,
+        playerName: player.username,
+        raiseAmount,
+        bettingPhase: gameState.bettingPhase,
+      }),
+    });
   }
 
   nextPlayer();
@@ -519,6 +558,7 @@ function updateRaiseBar() {
     currentBet - players[currentPlayer].bet + 1;
 }
 
+// fold
 function playerFold() {
   const { players, currentPlayer, actions } = gameState;
   const updatedPlayers = [...players];
@@ -529,19 +569,34 @@ function playerFold() {
   const updatedActions = [...actions];
   updatedActions[currentPlayer] = true;
 
+  const updatedGame = {
+    players: updatedPlayers,
+    actions: updatedActions,
+    activePlayers: updatedActivePlayers,
+    bettingPhase: gameState.bettingPhase,
+  };
+
   if (updatedActivePlayers.length === 1) {
     const updatedGameInProgress = false;
     updateDoc(gameRef, {
-      players: updatedPlayers,
-      actions: updatedActions,
-      activePlayers: updatedActivePlayers,
+      ...updatedGame,
       gameInProgress: updatedGameInProgress,
+      history: arrayUnion({
+        action: "fold",
+        playerId: gameState.players[currentPlayer].id,
+        playerNumber: currentPlayer,
+        playerName: gameState.players[currentPlayer].username,
+      }),
     });
   } else {
     updateDoc(gameRef, {
-      players: updatedPlayers,
-      actions: updatedActions,
-      activePlayers: updatedActivePlayers,
+      ...updatedGame,
+      history: arrayUnion({
+        action: "fold",
+        playerId: gameState.players[currentPlayer].id,
+        playerNumber: currentPlayer,
+        playerName: gameState.players[currentPlayer].username,
+      }),
     });
   }
 
@@ -751,7 +806,11 @@ function updateUI() {
   if (gameState == undefined) {
     return;
   }
-
+  document.getElementById("action-history").innerText = JSON.stringify(
+    gameState.history,
+    null,
+    2
+  );
   const { drawnTeams, gameInProgress } = gameState;
   const numDrawnTeamsDisplayed =
     document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
