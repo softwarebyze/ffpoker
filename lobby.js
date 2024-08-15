@@ -1,17 +1,9 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore,
-  doc,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  onSnapshot,
   collection,
   getDocs,
-  getDoc,
-  arrayUnion,
-  setDoc,
+  getFirestore,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Your web app's Firebase configuration
@@ -33,19 +25,6 @@ const gamesCollection = collection(db, "games");
 
 const querySnapshot = await getDocs(gamesCollection);
 const numPlayers = 4; // This may be stored in each game's gameState later, but for now manually defined
-
-// try {
-//     querySnapshot.forEach((doc) => {
-//         const gameData = doc.data();
-//         const gameState = gameData.gameState;
-//         const gameId = doc.id;
-//         // Access game state here
-//         console.log(`${gameId}`, gameData['players'])
-//     });
-
-// } catch (error) {
-//     console.error("Error getting documents: ", error);
-// }
 
 function addUsername() {
   const userText = document.getElementById("user-text").value;
