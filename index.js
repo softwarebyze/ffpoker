@@ -1,25 +1,22 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore,
-  doc,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  onSnapshot,
-  collection,
-  getDocs,
-  getDoc,
-  arrayUnion,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
+  browserSessionPersistence,
   getAuth,
   onAuthStateChanged,
-  signInAnonymously,
   setPersistence,
-  browserSessionPersistence
+  signInAnonymously,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  arrayUnion,
+  deleteDoc,
+  doc,
+  getDoc,
+  getFirestore,
+  onSnapshot,
+  setDoc,
+  updateDoc,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -38,78 +35,102 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-
 const positions = ["QB", "RB", "WR", "Def", "TE", "K"];
 const teams = [
-    "Arizona Cardinals",
-    "Atlanta Falcons",
-    "Baltimore Ravens",
-    "Buffalo Bills",
-    "Carolina Panthers",
-    "Chicago Bears",
-    "Cincinnati Bengals",
-    "Cleveland Browns",
-    "Dallas Cowboys",
-    "Denver Broncos",
-    "Detroit Lions",
-    "Green Bay Packers",
-    "Houston Texans",
-    "Indianapolis Colts",
-    "Jacksonville Jaguars",
-    "Kansas City Chiefs",
-    "Las Vegas Raiders",
-    "Los Angeles Chargers",
-    "Los Angeles Rams",
-    "Miami Dolphins",
-    "Minnesota Vikings",
-    "New England Patriots",
-    "New Orleans Saints",
-    "New York Giants",
-    "New York Jets",
-    "Philadelphia Eagles",
-    "Pittsburgh Steelers",
-    "San Francisco 49ers",
-    "Seattle Seahawks",
-    "Tampa Bay Buccaneers",
-    "Tennessee Titans",
-    "Washington Commanders"
+  "Arizona Cardinals",
+  "Atlanta Falcons",
+  "Baltimore Ravens",
+  "Buffalo Bills",
+  "Carolina Panthers",
+  "Chicago Bears",
+  "Cincinnati Bengals",
+  "Cleveland Browns",
+  "Dallas Cowboys",
+  "Denver Broncos",
+  "Detroit Lions",
+  "Green Bay Packers",
+  "Houston Texans",
+  "Indianapolis Colts",
+  "Jacksonville Jaguars",
+  "Kansas City Chiefs",
+  "Las Vegas Raiders",
+  "Los Angeles Chargers",
+  "Los Angeles Rams",
+  "Miami Dolphins",
+  "Minnesota Vikings",
+  "New England Patriots",
+  "New Orleans Saints",
+  "New York Giants",
+  "New York Jets",
+  "Philadelphia Eagles",
+  "Pittsburgh Steelers",
+  "San Francisco 49ers",
+  "Seattle Seahawks",
+  "Tampa Bay Buccaneers",
+  "Tennessee Titans",
+  "Washington Commanders",
 ];
 
 let activePlayersData = {};
 let teamScores = {};
 
 async function loadCSVData() {
-  const response = await fetch('nfl_rosters_2024.csv');
+  const response = await fetch("nfl_rosters_2024.csv");
   const csvText = await response.text();
 
-  const lines = csvText.split('\n');
-  const headers = lines[0].split(',');
+  const lines = csvText.split("\n");
+  const headers = lines[0].split(",");
 
-  lines.slice(1).forEach(line => {
-    const values = line.split(',');
-    const team = values[headers.indexOf('Team')];
+  lines.slice(1).forEach((line) => {
+    const values = line.split(",");
+    const team = values[headers.indexOf("Team")];
     activePlayersData[team] = {
-      QB: values[headers.indexOf('QB')],
-      RB: values[headers.indexOf('RB')],
-      WR: values[headers.indexOf('WR')],
-      TE: values[headers.indexOf('TE')],
-      Def: values[headers.indexOf('Defense')],
-      K: values[headers.indexOf('K')],
+      QB: values[headers.indexOf("QB")],
+      RB: values[headers.indexOf("RB")],
+      WR: values[headers.indexOf("WR")],
+      TE: values[headers.indexOf("TE")],
+      Def: values[headers.indexOf("Defense")],
+      K: values[headers.indexOf("K")],
     };
     teamScores[team] = {
-      QB: parseInt(values[headers.indexOf('QB Points')], 10) || 0,
-      RB: parseInt(values[headers.indexOf('RB Points')], 10) || 0,
-      WR: parseInt(values[headers.indexOf('WR Points')], 10) || 0,
-      TE: parseInt(values[headers.indexOf('TE Points')], 10) || 0,
-      Def: parseInt(values[headers.indexOf('Defense Points')], 10) || 0,
-      K: parseInt(values[headers.indexOf('K Points')], 10) || 0,
+      QB: parseInt(values[headers.indexOf("QB Points")], 10) || 0,
+      RB: parseInt(values[headers.indexOf("RB Points")], 10) || 0,
+      WR: parseInt(values[headers.indexOf("WR Points")], 10) || 0,
+      TE: parseInt(values[headers.indexOf("TE Points")], 10) || 0,
+      Def: parseInt(values[headers.indexOf("Defense Points")], 10) || 0,
+      K: parseInt(values[headers.indexOf("K Points")], 10) || 0,
     };
   });
 }
 
+function getGameId() {
+  const searchParams = new URLSearchParams(window.location.search);
+
+  if (!searchParams.has("gameId") || searchParams.get("gameId") == "") {
+    console.log("gameId is not provided");
+    return "tempCode";
+  } else {
+    return searchParams.get("gameId");
+  }
+}
+
+function getUsername() {
+  const searchParams = new URLSearchParams(window.location.search);
+
+  if (!searchParams.has("username") || searchParams.get("username") == "") {
+    location.replace(
+      `${window.location.origin}/username${window.location.search}`
+    );
+    return "";
+  } else {
+    return searchParams.get("username");
+  }
+}
+
 const numPlayers = 4;
-const gameId = "AAAB";
-document.getElementById('game-id').innerHTML = gameId;
+const gameId = getGameId();
+document.getElementById("game-id").innerHTML = gameId;
+const username = getUsername();
 let playerId;
 let gameRef;
 let gameState;
@@ -117,7 +138,21 @@ let gameState;
 onAuthStateChanged(auth, async (user) => {
   if (user && user.uid) {
     playerId = user.uid;
-    document.getElementById('player-id').innerHTML = playerId;
+    document.getElementById("player-id").innerHTML = playerId;
+    if (username == "") {
+      document.getElementById("username-span").style.display = "none";
+    } else {
+      // If the username exists
+      document.getElementById("username").innerHTML = username;
+      document.getElementById("username").style.display = "";
+    }
+
+    document.getElementById(
+      "invite-link-clickable"
+    ).href = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
+    document.getElementById(
+      "invite-link-clickable"
+    ).innerHTML = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
 
     await loadCSVData(); // Ensure CSV data is loaded before continuing
 
@@ -134,12 +169,10 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-
-
 // Existing and future Auth states are now persisted in the current
 // session only. Closing the window would clear any existing state even
 // if a user forgets to sign out.
-setPersistence(auth, browserSessionPersistence)
+setPersistence(auth, browserSessionPersistence);
 
 signInAnonymously(auth);
 
@@ -153,20 +186,14 @@ async function loadInitialGameState() {
     // docSnap.data() will be undefined in this case
     console.log("No such document!");
     const initialGameState = {
-      "initialChips": 50,
-      "actions": [
-        false,
-        false,
-        false,
-        false
-      ],
-      "currentPlayer": 0,
-      "activePlayers": [
-      ],
-      "startingPlayer": 0,
-      "gameInProgress": false,
-      "pot": 0,
-      "players": [
+      initialChips: 50,
+      actions: [false, false, false, false],
+      currentPlayer: 0,
+      activePlayers: [],
+      startingPlayer: 0,
+      gameInProgress: false,
+      pot: 0,
+      players: [
         // {
         //     "inGame": true,
         //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
@@ -176,11 +203,11 @@ async function loadInitialGameState() {
         //     "chips": 50
         // }
       ],
-      "bettingPhase": 1,
-      "initialBet": 10,
-      "currentBet": 10,
-      "drawnTeams": []
-    }
+      bettingPhase: 1,
+      initialBet: 10,
+      currentBet: 10,
+      drawnTeams: [],
+    };
     await setDoc(doc(db, "games", gameId), initialGameState);
   }
 }
@@ -232,7 +259,6 @@ async function loadTeamData() {
     logosData.NFLTeams.forEach((team) => {
       teamLogos[team.team] = team.image_url;
     });
-
   } catch (error) {
     console.error("Error loading team data:", error);
   }
@@ -242,9 +268,6 @@ async function joinGame() {
   const availablePositions = [...positions];
   const positionIndex = Math.floor(Math.random() * availablePositions.length);
   const position = availablePositions.splice(positionIndex, 1)[0];
-  const numCurrentPlayers = gameState.players.length;
-  const newPlayerIndex = numCurrentPlayers;
-  document.getElementById('player-number').innerHTML = newPlayerIndex;
 
   await updateDoc(gameRef, {
     players: arrayUnion({
@@ -258,7 +281,12 @@ async function joinGame() {
     pot: gameState.pot + gameState.initialBet,
   });
 
-  if (gameState.players.length == numPlayers) { // When the final person joins, automatically start the game
+  const numCurrentPlayers = gameState.players.length;
+  const newPlayerIndex = numCurrentPlayers;
+  document.getElementById("player-number").innerHTML = newPlayerIndex;
+
+  if (gameState.players.length == numPlayers) {
+    // When the final person joins, automatically start the game
     await startGame();
   }
 }
@@ -266,8 +294,13 @@ async function joinGame() {
 function startGame() {
   const DEFAULT_BET = 10;
   const DEFAULT_CHIPS = 50;
-  const originalPlayers = gameState.players
-  const updatedPlayers = originalPlayers.map(player => ({ ...player, bet: DEFAULT_BET, chips: DEFAULT_CHIPS, inGame: true }))
+  const originalPlayers = gameState.players;
+  const updatedPlayers = originalPlayers.map((player) => ({
+    ...player,
+    bet: DEFAULT_BET,
+    chips: DEFAULT_CHIPS,
+    inGame: true,
+  }));
   gameState.gameInProgress = true;
   gameState.players = updatedPlayers;
   gameState.drawnTeams = [];
@@ -284,6 +317,7 @@ function startGame() {
   document.getElementById("results").style.display = "none";
   document.getElementById("startGame").style.display = "none";
   document.getElementById("joinGame").style.display = "none";
+  document.getElementById("invite-link-div").style.display = "none";
 
   updateDoc(gameRef, {
     players: gameState.players,
@@ -356,7 +390,8 @@ function updatePlayerActions() {
       playerActions.innerHTML = `<h3>Your turn!</h3>`;
       if (players[currentPlayer].bet == currentBet) {
         playerActions.innerHTML += `<button onclick="playerCheck()">Check</button>`;
-      } else { // Eventually handle not enough chips by replacing with else if
+      } else {
+        // Eventually handle not enough chips by replacing with else if
         playerActions.innerHTML += `<button onclick="playerCall()">Call</button>`;
       }
       if (
@@ -379,15 +414,15 @@ function updatePlayerActions() {
 }
 
 function playerCheck() {
-  const { currentPlayer } = gameState
+  const { currentPlayer } = gameState;
 
   // figure out what the new state should be
-  const updatedActions = gameState.actions
-  updatedActions[currentPlayer] = true
+  const updatedActions = gameState.actions;
+  updatedActions[currentPlayer] = true;
   // update the state in the db
   updateDoc(gameRef, {
-    actions: updatedActions
-  })
+    actions: updatedActions,
+  });
 
   if (updatedActions.every((a) => a)) {
     goToNextPhaseOrGameEnd();
@@ -410,11 +445,11 @@ function playerCall() {
     updatedPlayer.chips -= diff;
     updatedGameState.pot += diff;
 
-    updatedGameState.players[currentPlayer] = updatedPlayer
+    updatedGameState.players[currentPlayer] = updatedPlayer;
 
     updatedGameState.actions[currentPlayer] = true;
 
-    updateDoc(gameRef, updatedGameState)
+    updateDoc(gameRef, updatedGameState);
 
     if (updatedGameState.actions.every((a) => a)) {
       goToNextPhaseOrGameEnd();
@@ -447,7 +482,9 @@ function playerRaise() {
     player.chips -= raiseAmount;
     updatedGameState.pot += raiseAmount;
     updatedGameState.currentBet = player.bet;
-    updatedGameState.actions = updateFoldedPlayerActions(updatedGameState.actions.fill(false));
+    updatedGameState.actions = updateFoldedPlayerActions(
+      updatedGameState.actions.fill(false)
+    );
     updatedGameState.actions[currentPlayer] = true;
     updateRaiseBar();
     toggleRaise();
@@ -455,7 +492,6 @@ function playerRaise() {
     updatedGameState.players[currentPlayer] = player;
 
     updateDoc(gameRef, updatedGameState);
-
   }
 
   nextPlayer();
@@ -484,10 +520,12 @@ function updateRaiseBar() {
 }
 
 function playerFold() {
-  const { players, currentPlayer, actions } = gameState
+  const { players, currentPlayer, actions } = gameState;
   const updatedPlayers = [...players];
   updatedPlayers[currentPlayer].inGame = false;
-  const updatedActivePlayers = gameState.activePlayers.filter((index) => index !== currentPlayer);
+  const updatedActivePlayers = gameState.activePlayers.filter(
+    (index) => index !== currentPlayer
+  );
   const updatedActions = [...actions];
   updatedActions[currentPlayer] = true;
 
@@ -498,14 +536,13 @@ function playerFold() {
       actions: updatedActions,
       activePlayers: updatedActivePlayers,
       gameInProgress: updatedGameInProgress,
-    })
-
+    });
   } else {
     updateDoc(gameRef, {
       players: updatedPlayers,
       actions: updatedActions,
       activePlayers: updatedActivePlayers,
-    })
+    });
   }
 
   if (updatedActivePlayers.length === 1) {
@@ -520,7 +557,7 @@ function playerFold() {
 }
 
 function nextPlayer() {
-  const { players } = gameState
+  const { players } = gameState;
 
   let updatedCurrentPlayer = (gameState.currentPlayer + 1) % numPlayers;
   while (!players[updatedCurrentPlayer].inGame) {
@@ -528,17 +565,17 @@ function nextPlayer() {
   }
 
   updateDoc(gameRef, {
-    currentPlayer: updatedCurrentPlayer
-  })
+    currentPlayer: updatedCurrentPlayer,
+  });
 
   updatePlayerActions();
 }
 
 function resetPlayer() {
-  const { startingPlayer, players, gameInProgress } = gameState
+  const { startingPlayer, players, gameInProgress } = gameState;
   updateDoc(gameRef, {
     currentPlayer: startingPlayer,
-  })
+  });
 
   if (!players[startingPlayer].inGame) {
     nextPlayer();
@@ -560,12 +597,14 @@ function drawTeam() {
     availableTeams[Math.floor(Math.random() * availableTeams.length)];
   const updatedDrawnTeams = [...gameState.drawnTeams];
   updatedDrawnTeams.push(team);
-  const updatedActions = updateFoldedPlayerActions(gameState.actions.fill(false));
+  const updatedActions = updateFoldedPlayerActions(
+    gameState.actions.fill(false)
+  );
   if (updatedDrawnTeams.length < 2) {
     updateDoc(gameRef, {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
-    })
+    });
     updatePlayerActions();
   } else if (gameState.bettingPhase < 4) {
     const updatedBettingPhase = gameState.bettingPhase + 1;
@@ -573,7 +612,7 @@ function drawTeam() {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
       bettingPhase: updatedBettingPhase,
-    })
+    });
     updatePlayerActions();
   } else {
     const updatedGameInProgress = false;
@@ -581,14 +620,14 @@ function drawTeam() {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
       gameInProgress: updatedGameInProgress,
-    })
+    });
     revealScores();
   }
 }
 
 function updateFoldedPlayerActions(actions) {
   const updatedActions = [...actions];
-  const { players, } = gameState
+  const { players } = gameState;
   for (const curPlayer in players) {
     if (!players[curPlayer].inGame) {
       updatedActions[curPlayer] = true;
@@ -602,13 +641,13 @@ function goToNextPhaseOrGameEnd() {
     const updatedGameInProgress = false;
     updateDoc(gameRef, {
       gameInProgress: updatedGameInProgress,
-    })
+    });
     revealScores();
   } else {
     const updatedBettingPhase = gameState.bettingPhase + 1;
     updateDoc(gameRef, {
       bettingPhase: updatedBettingPhase,
-    })
+    });
     drawTeam();
     resetPlayer();
   }
@@ -622,7 +661,7 @@ function revealScores() {
 
   updateDoc(gameRef, {
     gameInProgress: updatedGameInProgress,
-  })
+  });
 
   players.forEach((player) => {
     gameState.drawnTeams.forEach((team) => {
@@ -643,19 +682,26 @@ function revealScores() {
   document.getElementById("startGame").style.display = "";
 }
 
-
 function revealWinner(winner) {
   const { players, pot } = gameState;
-  const scoresText = players.map((p, index) => {
-    const activePlayers = gameState.drawnTeams.map((team) => {
-      const playerName = activePlayersData[team][p.position];
-      const playerPoints = teamScores[team][p.position];
-      const teamColor = teamColors[team];
-      return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${playerName} (${playerPoints} pts)</span>`;
-    }).join(", ");
-    const grayClass = p.inGame ? "" : "light-gray-text";
-    return `<span class="${grayClass}">Player ${index + 1}: ${p.score} points, Chips: ${p.chips}, Active Football Players: ${activePlayers}</span>`;
-  }).join("<br>");
+  const scoresText = players
+    .map((p, index) => {
+      const activePlayers = gameState.drawnTeams
+        .map((team) => {
+          const playerName = activePlayersData[team][p.position];
+          const playerPoints = teamScores[team][p.position];
+          const teamColor = teamColors[team];
+          return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${playerName} (${playerPoints} pts)</span>`;
+        })
+        .join(", ");
+      const grayClass = p.inGame ? "" : "light-gray-text";
+      return `<span class="${grayClass}">Player ${index + 1}: ${
+        p.score
+      } points, Chips: ${
+        p.chips
+      }, Active Football Players: ${activePlayers}</span>`;
+    })
+    .join("<br>");
 
   const winnerIndex = players.indexOf(winner) + 1;
   document.getElementById(
@@ -663,6 +709,12 @@ function revealWinner(winner) {
   ).innerHTML = `Scores:<br>${scoresText}<br><br>Winner: <strong style="color: gold; font-size: 1.2em; font-family: 'Freshman'">Player ${winnerIndex}</strong> with ${winner.score} points! Pot: ${pot}`;
 }
 
+function copyInviteLink() {
+  const inviteLink = document.getElementById("invite-link-clickable").href;
+  navigator.clipboard.writeText(inviteLink);
+
+  alert(`Copied invite link: ${inviteLink}`);
+}
 
 function updatePotDisplay() {
   const potDisplay = document.getElementById("pot-display");
@@ -701,7 +753,8 @@ function updateUI() {
   }
 
   const { drawnTeams, gameInProgress } = gameState;
-  const numDrawnTeamsDisplayed = document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
+  const numDrawnTeamsDisplayed =
+    document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
   const any = (arr, fn = Boolean) => arr.some(fn); // Checks for any instance of true in an array
   if (numDrawnTeamsDisplayed != drawnTeams.length) {
     updateTeamUI();
@@ -711,17 +764,26 @@ function updateUI() {
       document.getElementById("results").style.display = "none";
       document.getElementById("startGame").style.display = "none";
       document.getElementById("joinGame").style.display = "none";
+      document.getElementById("invite-link-div").style.display = "none";
     }
-  } else { // if (!gameInProgress)
+  } else {
+    // if (!gameInProgress)
     if (gameState.players.length < numPlayers) {
       if (document.getElementById("joinGame").style.display == "none") {
         document.getElementById("joinGame").style.display = "";
-      } else { // if (document.getElementById("joinGame").style.display == "")
+        document.getElementById("invite-link-div").style.display = "";
+      } else {
+        // if (document.getElementById("joinGame").style.display == "")
         document.getElementById("results").style.display = "none";
       }
-    } else if (document.getElementById("results").style.display == "none" && any(gameState.actions)) { // gameState.players.length >= numPlayers
+    } else if (
+      document.getElementById("results").style.display == "none" &&
+      any(gameState.actions)
+    ) {
+      // gameState.players.length >= numPlayers
       revealScores();
       document.getElementById("joinGame").style.display = "none";
+      document.getElementById("invite-link-div").style.display = "none";
     }
   }
 }
@@ -752,8 +814,7 @@ function updateTimer() {
     return;
   }
 
-  if (timer.style.display == "none")
-    return;
+  if (timer.style.display == "none") return;
 
   if (timer.innerHTML == "1:00") {
     timer.innerHTML = "0:59";
@@ -788,6 +849,7 @@ function showGame() {
   document.getElementById("players-section").style.display = "";
   document.getElementById("startGame").style.display = "none";
   document.getElementById("joinGame").style.display = "none";
+  document.getElementById("invite-link-div").style.display = "none";
 }
 
 hideGame();
@@ -797,13 +859,14 @@ hideGame();
 // startGame();
 
 // Allow buttons on html to use js functions
-window.playerCheck = playerCheck
-window.playerCall = playerCall
-window.playerFold = playerFold
-window.playerRaise = playerRaise
-window.toggleRaise = toggleRaise
-window.updateRaiseAmount = updateRaiseAmount
-window.startGame = startGame
-window.resetGame = resetGame
-window.joinGame = joinGame
-window.deleteGame = async gameId => await deleteDoc(doc(db, "games", gameId))
+window.playerCheck = playerCheck;
+window.playerCall = playerCall;
+window.playerFold = playerFold;
+window.playerRaise = playerRaise;
+window.toggleRaise = toggleRaise;
+window.updateRaiseAmount = updateRaiseAmount;
+window.startGame = startGame;
+window.resetGame = resetGame;
+window.joinGame = joinGame;
+window.copyInviteLink = copyInviteLink;
+window.deleteGame = async (gameId) => await deleteDoc(doc(db, "games", gameId));

@@ -122,6 +122,7 @@
     <div id="timer"></div>
 
     Player Id: <span id="player-id"></span><br/>
+    <span id="username-span">Username: <span id="username"></span><br/></span>
     Player Number: <span id="player-number"></span><br/>
     Game Id: <span id="game-id"></span><br/>
 
@@ -165,6 +166,10 @@
     <button id="startGame" onclick="startGame()">New Game</button>
     <button id="joinGame" onclick="joinGame()">Join Game</button>
     <button id="resetGame" onclick="resetGame()">Reset Game</button>
+    <div id="invite-link-div">
+      Game invite link: <a id="invite-link-clickable" style="color:#fff"></a><br/>
+      <button id="copy-invite-link" onclick="copyInviteLink()">Copy Invite Link</button>
+    </div>
 
     <script type="module" src="index.js"></script>
   </body>
