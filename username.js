@@ -24,7 +24,7 @@ if (!auth.currentUser) {
   signInAnonymously(auth);
 }
 
-if (auth.currentUser.displayName) {
+if (auth.currentUser?.displayName) {
   // If the current user already has a display name, don't reassign it
   const gameId = getGameId();
 

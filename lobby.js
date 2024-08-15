@@ -53,8 +53,7 @@ async function addUsername() {
       displayName: userText,
     });
     document.getElementById("error-text").innerHTML = "";
-    document.getElementById("username").innerHTML =
-      auth.currentUser.displayName;
+    document.getElementById("username").innerHTML = userText;
     document.getElementById("create-username").style.display = "none";
     document.getElementById("join-create-game").style.display = "";
   }
@@ -83,7 +82,7 @@ function joinOrCreateRandomGame() {
   } else {
     const gameId =
       joinableGames[Math.floor(Math.random() * joinableGames.length)];
-    console.log(`${gameId} was randomly selected from the availible games`);
+    console.log(`${gameId} was randomly selected from the available games`);
     location.assign(`${address}/ffpoker?gameId=${gameId}`);
   }
 }
