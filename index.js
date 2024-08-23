@@ -123,7 +123,6 @@ let gameRef;
 let gameState;
 
 onAuthStateChanged(auth, async (user) => {
-  console.log('authStateChanged')
   if (user && user.uid && user.displayName) {
     playerId = user.uid;
     document.getElementById("player-id").innerHTML = playerId;
@@ -146,8 +145,20 @@ onAuthStateChanged(auth, async (user) => {
       await joinGame();
     }
     if (gameState.status === "awaitingStart") {
-      startGame();
+      document.getElementById("startGame").style.display = "";
     }
+    if (gameState.status === "awaitingResults") {
+      checkTime();
+    }
+
+    const players = gameState.players;
+      for (const playerIndex in players) {
+        if (players[playerIndex]["id"] === playerId) {
+          const newPlayerIndex = Number(playerIndex) + 1;
+          document.getElementById("player-number").innerHTML =
+            Number(playerIndex) + 1;
+        }
+      }
   } else {
     location.replace(
       `${window.location.origin}/username${window.location.search}`
@@ -707,35 +718,50 @@ function goToNextPhaseOrGameEnd() {
 }
 
 function getNextMonday() {
-  const startedAt = gameState.startedAt.toDate()
+  const startedAt = gameState.startedAt.toDate();
   const nextMonday = new Date(startedAt);
-  nextMonday.setDate(startedAt.getDate() + (1 + 7 - startedAt.getDay()) % 7);
-  nextMonday.setHours(23, 59, 59, 999);  // Set to 23:59:59.999 on Monday
-  return nextMonday
+  nextMonday.setDate(startedAt.getDate() + ((1 + 7 - startedAt.getDay()) % 7));
+  nextMonday.setHours(23, 59, 59, 999); // Set to 23:59:59.999 on Monday
+  return nextMonday;
+}
+
+function checkTime() {
+  if (gameState.status === "awaitingResults") {
+    const now = new Date();
+    if (now >= getNextMonday()) {
+      revealScores();
+    } else {
+      console.log(
+        `${now} is before the expected date/time of ${getNextMonday()}`
+      );
+    }
+  }
 }
 
 function revealScores() {
   const { players, pot } = gameState;
   document.getElementById("results").style.display = "";
   document.getElementById("player-actions").innerHTML = "";
-  // if status == "resultsShown"
 
   if (gameState.status === "awaitingResults") {
     const now = new Date();
     if (now < getNextMonday()) {
-      console.log(`${now} is before the expected date/time of ${getNextMonday()}`)
+      console.log(
+        `${now} is before the expected date/time of ${getNextMonday()}`
+      );
+      document.getElementById("next-monday").innerHTML = getNextMonday();
+      document.getElementById("waiting-results").style.display = "";
+      document.getElementById("final-score").style.display = "none";
+      return;
+    } else {
+      document.getElementById("waiting-results").style.display = "none";
+      document.getElementById("final-score").style.display = "";
+      const updatedStatus = "resultsShown";
+      updateDoc(gameRef, {
+        status: updatedStatus, //possible statuses:'awaitingPlayers', 'awaitingStart', 'active', 'awaitingResults', 'resultsShown'
+      });
     }
   }
-
-  const updatedGameInProgress = false;
-
-  updateDoc(gameRef, {
-    gameInProgress: updatedGameInProgress, //possible statuses:'awaitingPlayers', 'awaitingStart', 'active', 'awaitingResults', 'resultsShown'
-  });
-
-  // if (activePlayers.length > 1) {
-  // check for time/date
-  //}
 
   players.forEach((player) => {
     gameState.drawnTeams.forEach((team) => {
@@ -834,7 +860,10 @@ function updateUI() {
   }
 
   if (status === "active") {
-    if (document.getElementById("startGame").style.display == "" || document.getElementById("joinGame").style.display == "") {
+    if (
+      document.getElementById("startGame").style.display == "" ||
+      document.getElementById("joinGame").style.display == ""
+    ) {
       document.getElementById("results").style.display = "none";
       document.getElementById("startGame").style.display = "none";
       document.getElementById("joinGame").style.display = "none";
@@ -855,6 +884,15 @@ function updateUI() {
     revealScores();
     document.getElementById("joinGame").style.display = "none";
     document.getElementById("invite-link-div").style.display = "none";
+  } else if (
+    (document.getElementById("final-score").style.display == "none" ||
+      document.getElementById("final-score").innerHTML == "") &&
+    gameState.status == "resultsShown"
+  ) {
+    revealScores();
+    document.getElementById("final-score").style.display = "";
+    document.getElementById("waiting-results").style.display = "none";
+    document.getElementById("startGame").style.display = "";
   }
 }
 
@@ -917,7 +955,9 @@ function hideGame() {
 function showGame() {
   document.getElementById("team-info").style.display = "";
   document.getElementById("players-section").style.display = "";
-  document.getElementById("startGame").style.display = "none";
+  if (!["awaitingStart", "resultsShown"].includes(gameState.status)) {
+    document.getElementById("startGame").style.display = "none";
+  }
   document.getElementById("joinGame").style.display = "none";
   document.getElementById("invite-link-div").style.display = "none";
 }
@@ -938,4 +978,9 @@ window.startGame = startGame;
 window.resetGame = resetGame;
 window.joinGame = joinGame;
 window.copyInviteLink = copyInviteLink;
+window.checkTime = checkTime;
+window.setState = async (updatedStatus) =>
+  await updateDoc(gameRef, {
+    status: updatedStatus,
+  });
 window.deleteGame = async (gameId) => await deleteDoc(doc(db, "games", gameId));
