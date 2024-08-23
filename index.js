@@ -728,11 +728,12 @@ function getNextMonday() {
 function checkTime() {
   if (gameState.status === "awaitingResults") {
     const now = new Date();
-    if (now >= getNextMonday()) {
+    const monday = getNextMonday();
+    if (now >= monday) {
       revealScores();
     } else {
       console.log(
-        `${now} is before the expected date/time of ${getNextMonday()}`
+        `${now} is before the expected date/time of ${monday}`
       );
     }
   }
@@ -745,11 +746,12 @@ function revealScores() {
 
   if (gameState.status === "awaitingResults") {
     const now = new Date();
-    if (now < getNextMonday()) {
+    const monday = getNextMonday();
+    if (now < monday) {
       console.log(
-        `${now} is before the expected date/time of ${getNextMonday()}`
+        `${now} is before the expected date/time of ${monday}`
       );
-      document.getElementById("next-monday").innerHTML = getNextMonday();
+      document.getElementById("next-monday").innerHTML = monday;
       document.getElementById("waiting-results").style.display = "";
       document.getElementById("final-score").style.display = "none";
       return;
