@@ -155,8 +155,7 @@ onAuthStateChanged(auth, async (user) => {
       for (const playerIndex in players) {
         if (players[playerIndex]["id"] === playerId) {
           const newPlayerIndex = Number(playerIndex) + 1;
-          document.getElementById("player-number").innerHTML =
-            Number(playerIndex) + 1;
+          document.getElementById("player-number").innerHTML = newPlayerIndex;
         }
       }
   } else {
@@ -352,7 +351,6 @@ function updatePlayerInfo() {
   playersSection.innerHTML = "";
   gameState.players.forEach((player) => {
     const isActive =
-      // !!!!!
       gameState.status === "active" &&
       player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
@@ -981,8 +979,4 @@ window.resetGame = resetGame;
 window.joinGame = joinGame;
 window.copyInviteLink = copyInviteLink;
 window.checkTime = checkTime;
-window.setState = async (updatedStatus) =>
-  await updateDoc(gameRef, {
-    status: updatedStatus,
-  });
 window.deleteGame = async (gameId) => await deleteDoc(doc(db, "games", gameId));
