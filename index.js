@@ -1,4 +1,5 @@
 // Import the functions you need from the SDKs you need
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   browserSessionPersistence,
@@ -114,19 +115,6 @@ function getGameId() {
   }
 }
 
-function getUsername() {
-  const searchParams = new URLSearchParams(window.location.search);
-  console.log(auth.currentUser, { auth });
-  if (!auth.currentUser?.displayName) {
-    // location.replace(
-    //   `${window.location.origin}/username${window.location.search}`
-    // );
-    return "";
-  } else {
-    return auth.currentUser?.displayName;
-  }
-}
-
 const numPlayers = 4;
 const gameId = getGameId();
 document.getElementById("game-id").innerHTML = gameId;
@@ -153,12 +141,23 @@ onAuthStateChanged(auth, async (user) => {
     await loadInitialGameState();
     showGame();
 
-    if (gameState.players.length < numPlayers) {
+    if (gameState.status === "awaitingPlayers") {
       await joinGame();
     }
-    if (gameState.players.length === numPlayers) {
-      startGame();
+    if (gameState.status === "awaitingStart") {
+      document.getElementById("startGame").style.display = "";
     }
+    if (gameState.status === "awaitingResults") {
+      checkTime();
+    }
+
+    const players = gameState.players;
+      for (const playerIndex in players) {
+        if (players[playerIndex]["id"] === playerId) {
+          const newPlayerIndex = Number(playerIndex) + 1;
+          document.getElementById("player-number").innerHTML = newPlayerIndex;
+        }
+      }
   } else {
     location.replace(
       `${window.location.origin}/username${window.location.search}`
@@ -172,7 +171,6 @@ onAuthStateChanged(auth, async (user) => {
 setPersistence(auth, browserSessionPersistence);
 
 signInAnonymously(auth);
-//const username = getUsername();
 
 async function loadInitialGameState() {
   gameRef = doc(db, "games", gameId);
@@ -189,7 +187,7 @@ async function loadInitialGameState() {
       currentPlayer: 0,
       activePlayers: [],
       startingPlayer: 0,
-      gameInProgress: false,
+      status: "awaitingPlayers",
       pot: 0,
       players: [
         // {
@@ -208,6 +206,7 @@ async function loadInitialGameState() {
       // history: [
       //   {}
       // ]
+      createdAt: new Date(),
     };
     await setDoc(doc(db, "games", gameId), initialGameState);
   }
@@ -222,7 +221,10 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
-  if (gameState.players.length === numPlayers && !gameState.gameInProgress) {
+  if (
+    gameState.status == "resultsShown" ||
+    gameState.status == "awaitingStart"
+  ) {
     document.getElementById("startGame").style.display = "";
   }
 });
@@ -307,7 +309,7 @@ function startGame() {
     chips: DEFAULT_CHIPS,
     inGame: true,
   }));
-  gameState.gameInProgress = true;
+  gameState.status = "active";
   gameState.players = updatedPlayers;
   gameState.drawnTeams = [];
   gameState.currentPlayer = 0;
@@ -317,6 +319,7 @@ function startGame() {
   gameState.bettingPhase = 1;
   gameState.actions = new Array(numPlayers).fill(false);
   gameState.history = [];
+  gameState.startedAt = new Date();
 
   document.getElementById("teams-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
@@ -335,8 +338,9 @@ function startGame() {
     activePlayers: gameState.activePlayers,
     bettingPhase: gameState.bettingPhase,
     actions: gameState.actions,
-    gameInProgress: gameState.gameInProgress,
+    status: gameState.status,
     history: gameState.history,
+    startedAt: gameState.startedAt,
   });
 
   logGameState(); // Log initial game state
@@ -347,7 +351,8 @@ function updatePlayerInfo() {
   playersSection.innerHTML = "";
   gameState.players.forEach((player) => {
     const isActive =
-      gameState.gameInProgress && player.id === gameState.players[gameState.currentPlayer].id;
+      gameState.status === "active" &&
+      player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
     const activatedPlayers = getActivatedPlayers(player.position);
@@ -392,7 +397,7 @@ function updatePlayerActions() {
   if (gameState == undefined) {
     return;
   }
-  const { players, gameInProgress, currentPlayer, currentBet } = gameState;
+  const { players, status, currentPlayer, currentBet } = gameState;
   if (currentPlayer < players.length && players[currentPlayer].inGame) {
     if (players[currentPlayer].id == playerId) {
       timer.style.display = "";
@@ -418,7 +423,7 @@ function updatePlayerActions() {
     }
   }
   updatePlayerInfo();
-  if (!gameInProgress) {
+  if (status != "active") {
     playerActions.innerHTML = "";
   }
 }
@@ -579,10 +584,10 @@ function playerFold() {
   };
 
   if (updatedActivePlayers.length === 1) {
-    const updatedGameInProgress = false;
+    const updatedStatus = "resultsShown";
     updateDoc(gameRef, {
       ...updatedGame,
-      gameInProgress: updatedGameInProgress,
+      status: updatedStatus,
       history: arrayUnion({
         action: "fold",
         playerId: gameState.players[currentPlayer].id,
@@ -629,7 +634,7 @@ function nextPlayer() {
 }
 
 function resetPlayer() {
-  const { startingPlayer, players, gameInProgress } = gameState;
+  const { startingPlayer, players, status } = gameState;
   updateDoc(gameRef, {
     currentPlayer: startingPlayer,
   });
@@ -640,7 +645,7 @@ function resetPlayer() {
     updatePlayerActions();
   }
 
-  if (!gameInProgress) {
+  if (status != "active") {
     //If the game has ended, remove possible actions
     document.getElementById("player-actions").innerHTML = "";
   }
@@ -672,11 +677,11 @@ function drawTeam() {
     });
     updatePlayerActions();
   } else {
-    const updatedGameInProgress = false;
+    const updatedStatus = "awaitingResults";
     updateDoc(gameRef, {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
-      gameInProgress: updatedGameInProgress,
+      status: updatedStatus,
     });
     revealScores();
   }
@@ -695,9 +700,9 @@ function updateFoldedPlayerActions(actions) {
 
 function goToNextPhaseOrGameEnd() {
   if (gameState.bettingPhase === 3 || gameState.drawnTeams.length === 2) {
-    const updatedGameInProgress = false;
+    const updatedStatus = "awaitingResults";
     updateDoc(gameRef, {
-      gameInProgress: updatedGameInProgress,
+      status: updatedStatus,
     });
     revealScores();
   } else {
@@ -710,15 +715,53 @@ function goToNextPhaseOrGameEnd() {
   }
 }
 
+function getNextMonday() {
+  const startedAt = gameState.startedAt.toDate();
+  const nextMonday = new Date(startedAt);
+  nextMonday.setDate(startedAt.getDate() + ((1 + 7 - startedAt.getDay()) % 7));
+  nextMonday.setHours(23, 59, 59, 999); // Set to 23:59:59.999 on Monday
+  return nextMonday;
+}
+
+function checkTime() {
+  if (gameState.status === "awaitingResults") {
+    const now = new Date();
+    const monday = getNextMonday();
+    if (now >= monday) {
+      revealScores();
+    } else {
+      console.log(
+        `${now} is before the expected date/time of ${monday}`
+      );
+    }
+  }
+}
+
 function revealScores() {
   const { players, pot } = gameState;
   document.getElementById("results").style.display = "";
   document.getElementById("player-actions").innerHTML = "";
-  const updatedGameInProgress = false;
 
-  updateDoc(gameRef, {
-    gameInProgress: updatedGameInProgress,
-  });
+  if (gameState.status === "awaitingResults") {
+    const now = new Date();
+    const monday = getNextMonday();
+    if (now < monday) {
+      console.log(
+        `${now} is before the expected date/time of ${monday}`
+      );
+      document.getElementById("next-monday").innerHTML = monday;
+      document.getElementById("waiting-results").style.display = "";
+      document.getElementById("final-score").style.display = "none";
+      return;
+    } else {
+      document.getElementById("waiting-results").style.display = "none";
+      document.getElementById("final-score").style.display = "";
+      const updatedStatus = "resultsShown";
+      updateDoc(gameRef, {
+        status: updatedStatus, //possible statuses:'awaitingPlayers', 'awaitingStart', 'active', 'awaitingResults', 'resultsShown'
+      });
+    }
+  }
 
   players.forEach((player) => {
     gameState.drawnTeams.forEach((team) => {
@@ -808,39 +851,48 @@ function updateUI() {
   if (gameState == undefined) {
     return;
   }
-  const { drawnTeams, gameInProgress } = gameState;
+  const { drawnTeams, status } = gameState;
+
   const numDrawnTeamsDisplayed =
     document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
-  const any = (arr, fn = Boolean) => arr.some(fn); // Checks for any instance of true in an array
   if (numDrawnTeamsDisplayed != drawnTeams.length) {
     updateTeamUI();
   }
-  if (gameInProgress) {
-    if (document.getElementById("startGame").style.display == "") {
+
+  if (status === "active") {
+    if (
+      document.getElementById("startGame").style.display == "" ||
+      document.getElementById("joinGame").style.display == ""
+    ) {
       document.getElementById("results").style.display = "none";
       document.getElementById("startGame").style.display = "none";
       document.getElementById("joinGame").style.display = "none";
       document.getElementById("invite-link-div").style.display = "none";
     }
-  } else {
-    // if (!gameInProgress)
-    if (gameState.players.length < numPlayers) {
-      if (document.getElementById("joinGame").style.display == "none") {
-        document.getElementById("joinGame").style.display = "";
-        document.getElementById("invite-link-div").style.display = "";
-      } else {
-        // if (document.getElementById("joinGame").style.display == "")
-        document.getElementById("results").style.display = "none";
-      }
-    } else if (
-      document.getElementById("results").style.display == "none" &&
-      any(gameState.actions)
-    ) {
-      // gameState.players.length >= numPlayers
-      revealScores();
-      document.getElementById("joinGame").style.display = "none";
-      document.getElementById("invite-link-div").style.display = "none";
+  } else if (status === "awaitingPlayers") {
+    if (document.getElementById("joinGame").style.display == "none") {
+      document.getElementById("joinGame").style.display = "";
+      document.getElementById("invite-link-div").style.display = "";
+    } else {
+      // if (document.getElementById("joinGame").style.display == "")
+      document.getElementById("results").style.display = "none";
     }
+  } else if (
+    document.getElementById("results").style.display == "none" &&
+    ["awaitingResults", "resultsShown"].includes(status)
+  ) {
+    revealScores();
+    document.getElementById("joinGame").style.display = "none";
+    document.getElementById("invite-link-div").style.display = "none";
+  } else if (
+    (document.getElementById("final-score").style.display == "none" ||
+      document.getElementById("final-score").innerHTML == "") &&
+    gameState.status == "resultsShown"
+  ) {
+    revealScores();
+    document.getElementById("final-score").style.display = "";
+    document.getElementById("waiting-results").style.display = "none";
+    document.getElementById("startGame").style.display = "";
   }
 }
 
@@ -865,7 +917,7 @@ const interval = setInterval(updateTimer, 1000);
 function updateTimer() {
   const timer = document.getElementById("timer");
 
-  if (gameState == undefined || !gameState.gameInProgress) {
+  if (gameState == undefined || gameState.status != "active") {
     timer.style.display = "none";
     return;
   }
@@ -903,14 +955,15 @@ function hideGame() {
 function showGame() {
   document.getElementById("team-info").style.display = "";
   document.getElementById("players-section").style.display = "";
-  document.getElementById("startGame").style.display = "none";
+  if (!["awaitingStart", "resultsShown"].includes(gameState.status)) {
+    document.getElementById("startGame").style.display = "none";
+  }
   document.getElementById("joinGame").style.display = "none";
   document.getElementById("invite-link-div").style.display = "none";
 }
 
 hideGame();
 // await loadTeamData();
-// await loadInitialGameState();
 // joinGame();
 // startGame();
 
@@ -925,4 +978,5 @@ window.startGame = startGame;
 window.resetGame = resetGame;
 window.joinGame = joinGame;
 window.copyInviteLink = copyInviteLink;
+window.checkTime = checkTime;
 window.deleteGame = async (gameId) => await deleteDoc(doc(db, "games", gameId));
