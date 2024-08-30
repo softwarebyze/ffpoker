@@ -666,6 +666,11 @@ function drawTeam() {
     updateDoc(gameRef, {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
+      history: arrayUnion({
+        action: "drawTeam",
+        drawnTeam: team,
+        numTeamDrawn: updatedDrawnTeams.length,
+      }),
     });
     updatePlayerActions();
   } else if (gameState.bettingPhase < 4) {
@@ -674,6 +679,11 @@ function drawTeam() {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
       bettingPhase: updatedBettingPhase,
+      history: arrayUnion({
+        action: "drawTeam",
+        drawnTeam: team,
+        numTeamDrawn: updatedDrawnTeams.length,
+      }),
     });
     updatePlayerActions();
   } else {
@@ -682,6 +692,11 @@ function drawTeam() {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
       status: updatedStatus,
+      history: arrayUnion({
+        action: "drawTeam",
+        drawnTeam: team,
+        numTeamDrawn: updatedDrawnTeams.length,
+      }),
     });
     revealScores();
   }
@@ -894,6 +909,55 @@ function updateUI() {
     document.getElementById("waiting-results").style.display = "none";
     document.getElementById("startGame").style.display = "";
   }
+  const historyHTML = document.getElementById('history-contents').innerHTML
+  const numHistoryContents = historyHTML.split('<li>').length - 1;
+  if (gameState.history != undefined && gameState.history.length != numHistoryContents) {
+    updateHistoryUI()
+  }
+}
+
+function updateHistoryUI() {
+  const historyContents = document.getElementById('history-contents');
+  const historyHTML = historyContents.innerHTML
+  // const numItem = historyHTML.includes('<li>')
+  // const historySplit = historyHTML.split('<li>')
+  // for (let i = 1; i < historySplit.length; i++) {
+  //   console.log(`Item ${i}: ${historySplit[i]}`)
+  // }
+  const { history, players } = gameState;
+  historyContents.innerHTML = ""
+  
+  for (const event of history) {
+    const historyElement = document.createElement("li");
+    switch (event['action']) {
+      case 'check':
+        historyElement.innerHTML = `<strong>${event['playerName']}</strong> (Player ${event['playerNumber'] + 1}) checked`
+        break
+      case 'call':
+        historyElement.innerHTML = `<strong>${event['playerName']}</strong> (Player ${event['playerNumber'] + 1}) called ${event['amount']} chip`
+        if (event['amount'] != 1) {
+          historyElement.innerHTML += 's'
+        }
+        historyElement.innerHTML += ` with ${event['chips']} remaining`
+        break
+      case 'fold':
+        historyElement.innerHTML = `<strong>${event['playerName']}</strong> (Player ${event['playerNumber'] + 1}) folded`
+        break
+      case 'raise':
+        historyElement.innerHTML = `<strong>${event['playerName']}</strong> (Player ${event['playerNumber'] + 1}) raised to ${event['raiseAmount']} chip`
+        if (event['raiseAmount'] != 1) {
+          historyElement.innerHTML += 's'
+        }
+        break
+      case 'drawTeam':
+        historyElement.innerHTML = `${event['drawnTeam']} was drawn`
+        break
+      default:
+        historyElement.innerHTML = `${event.toString()}`
+    }
+    historyContents.appendChild(historyElement)
+  }
+  //console.log(`history length: ${historySplit[2]}`)
 }
 
 function updateTeamUI() {

@@ -81,6 +81,24 @@
         right: 20px;
       }
 
+      #history {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        margin-right: 10px;
+        border: solid;
+        
+      }
+
+      #history-contents {
+        list-style-type: none;
+        /* align-items:center; */
+        margin: 0;
+        margin-left: 5px;
+        margin-right: 5px;
+        padding: 0;
+      }
+
       #pot-display {
         font-size: 1.2em;
         font-weight: bold;
@@ -176,6 +194,10 @@
     <div id="invite-link-div">
       Game invite link: <a id="invite-link-clickable" style="color:#fff"></a><br/>
       <button id="copy-invite-link" onclick="copyInviteLink()">Copy Invite Link</button>
+    </div>
+    <div id="history">
+      <h3>History</h3>
+      <ul id="history-contents"></ul>
     </div>
 
     <script type="module" src="index.js"></script>
