@@ -320,6 +320,7 @@ function startGame() {
   gameState.actions = new Array(numPlayers).fill(false);
   gameState.history = [];
   gameState.startedAt = new Date();
+  gameState.endedAt = undefined; // Considering how to handle it
 
   document.getElementById("teams-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
@@ -342,6 +343,7 @@ function startGame() {
     status: gameState.status,
     history: gameState.history,
     startedAt: gameState.startedAt,
+    endedAt: gameState.endedAt,
   });
 
   logGameState(); // Log initial game state
@@ -586,9 +588,11 @@ function playerFold() {
 
   if (updatedActivePlayers.length === 1) {
     const updatedStatus = "resultsShown";
+    const endedAt = new Date();
     updateDoc(gameRef, {
       ...updatedGame,
       status: updatedStatus,
+      endedAt,
       history: arrayUnion({
         action: "fold",
         playerId: gameState.players[currentPlayer].id,
@@ -689,10 +693,12 @@ function drawTeam() {
     updatePlayerActions();
   } else {
     const updatedStatus = "awaitingResults";
+    const endedAt = new Date();
     updateDoc(gameRef, {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
       status: updatedStatus,
+      endedAt,
       history: arrayUnion({
         action: "drawTeam",
         drawnTeam: team,
@@ -717,8 +723,10 @@ function updateFoldedPlayerActions(actions) {
 function goToNextPhaseOrGameEnd() {
   if (gameState.bettingPhase === 3 || gameState.drawnTeams.length === 2) {
     const updatedStatus = "awaitingResults";
+    const endedAt = new Date();
     updateDoc(gameRef, {
       status: updatedStatus,
+      endedAt,
     });
     revealScores();
   } else {
@@ -773,8 +781,10 @@ function revealScores() {
       document.getElementById("waiting-results").style.display = "none";
       document.getElementById("final-score").style.display = "";
       const updatedStatus = "resultsShown";
+      const endedAt = new Date()
       updateDoc(gameRef, {
         status: updatedStatus, //possible statuses:'awaitingPlayers', 'awaitingStart', 'active', 'awaitingResults', 'resultsShown'
+        endedAt,
       });
     }
   }
