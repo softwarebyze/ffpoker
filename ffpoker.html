@@ -83,7 +83,6 @@
 
       #history {
         position: absolute;
-        bottom: 20px;
         right: 20px;
         margin-right: 10px;
         border: solid;
@@ -189,16 +188,23 @@
     <div id="game-log"></div>
 
     <button id="startGame" onclick="startGame()">New Game</button>
-    <button id="joinGame" onclick="joinGame()">Join Game</button>
-    <button id="resetGame" onclick="resetGame()">Reset Game</button>
+    <table>
+      <tr>
+        <button id="joinGame" onclick="joinGame()">Join Game</button>
+        <button id="resetGame" onclick="resetGame()">Reset Game</button>
+      </tr>
+      <tr>
+        <div id="history" style="display: none;">
+          <h3>History</h3>
+          <ul id="history-contents"></ul>
+        </div>
+      </tr>
+    </table>
     <div id="invite-link-div">
       Game invite link: <a id="invite-link-clickable" style="color:#fff"></a><br/>
       <button id="copy-invite-link" onclick="copyInviteLink()">Copy Invite Link</button>
     </div>
-    <div id="history" style="display: none;">
-      <h3>History</h3>
-      <ul id="history-contents"></ul>
-    </div>
+    
 
     <script type="module" src="index.js"></script>
   </body>

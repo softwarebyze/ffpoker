@@ -320,7 +320,7 @@ function startGame() {
   gameState.actions = new Array(numPlayers).fill(false);
   gameState.history = [];
   gameState.startedAt = new Date();
-  gameState.endedAt = undefined; // Considering how to handle it
+  gameState.endedAt = null; // Considering how to handle it
 
   document.getElementById("teams-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
@@ -781,7 +781,7 @@ function revealScores() {
       document.getElementById("waiting-results").style.display = "none";
       document.getElementById("final-score").style.display = "";
       const updatedStatus = "resultsShown";
-      const endedAt = new Date()
+      const endedAt = new Date();
       updateDoc(gameRef, {
         status: updatedStatus, //possible statuses:'awaitingPlayers', 'awaitingStart', 'active', 'awaitingResults', 'resultsShown'
         endedAt,
