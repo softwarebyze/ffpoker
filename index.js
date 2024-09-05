@@ -269,6 +269,13 @@ async function loadTeamData() {
 
 async function joinGame() {
   const availablePositions = [...positions];
+
+  for (let player of gameState.players) {
+    const playerPosition = player["position"];
+    const playerPositionIndex = availablePositions.indexOf(playerPosition);
+    availablePositions.splice(playerPositionIndex, 1);
+  }
+
   const positionIndex = Math.floor(Math.random() * availablePositions.length);
   const position = availablePositions.splice(positionIndex, 1)[0];
 
