@@ -152,12 +152,12 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     const players = gameState.players;
-      for (const playerIndex in players) {
-        if (players[playerIndex]["id"] === playerId) {
-          const newPlayerIndex = Number(playerIndex) + 1;
-          document.getElementById("player-number").innerHTML = newPlayerIndex;
-        }
+    for (const playerIndex in players) {
+      if (players[playerIndex]["id"] === playerId) {
+        const newPlayerIndex = Number(playerIndex) + 1;
+        document.getElementById("player-number").innerHTML = newPlayerIndex;
       }
+    }
   } else {
     location.replace(
       `${window.location.origin}/username${window.location.search}`
@@ -320,9 +320,11 @@ function startGame() {
   gameState.actions = new Array(numPlayers).fill(false);
   gameState.history = [];
   gameState.startedAt = new Date();
+  gameState.endedAt = null; // Considering how to handle it
 
   document.getElementById("teams-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
+  document.getElementById("history").style.display = "";
 
   document.getElementById("results").style.display = "none";
   document.getElementById("startGame").style.display = "none";
@@ -341,6 +343,7 @@ function startGame() {
     status: gameState.status,
     history: gameState.history,
     startedAt: gameState.startedAt,
+    endedAt: gameState.endedAt,
   });
 
   logGameState(); // Log initial game state
@@ -585,9 +588,11 @@ function playerFold() {
 
   if (updatedActivePlayers.length === 1) {
     const updatedStatus = "resultsShown";
+    const endedAt = new Date();
     updateDoc(gameRef, {
       ...updatedGame,
       status: updatedStatus,
+      endedAt,
       history: arrayUnion({
         action: "fold",
         playerId: gameState.players[currentPlayer].id,
@@ -666,6 +671,11 @@ function drawTeam() {
     updateDoc(gameRef, {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
+      history: arrayUnion({
+        action: "drawTeam",
+        drawnTeam: team,
+        numTeamDrawn: updatedDrawnTeams.length,
+      }),
     });
     updatePlayerActions();
   } else if (gameState.bettingPhase < 4) {
@@ -674,14 +684,26 @@ function drawTeam() {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
       bettingPhase: updatedBettingPhase,
+      history: arrayUnion({
+        action: "drawTeam",
+        drawnTeam: team,
+        numTeamDrawn: updatedDrawnTeams.length,
+      }),
     });
     updatePlayerActions();
   } else {
     const updatedStatus = "awaitingResults";
+    const endedAt = new Date();
     updateDoc(gameRef, {
       actions: updatedActions,
       drawnTeams: updatedDrawnTeams,
       status: updatedStatus,
+      endedAt,
+      history: arrayUnion({
+        action: "drawTeam",
+        drawnTeam: team,
+        numTeamDrawn: updatedDrawnTeams.length,
+      }),
     });
     revealScores();
   }
@@ -701,8 +723,10 @@ function updateFoldedPlayerActions(actions) {
 function goToNextPhaseOrGameEnd() {
   if (gameState.bettingPhase === 3 || gameState.drawnTeams.length === 2) {
     const updatedStatus = "awaitingResults";
+    const endedAt = new Date();
     updateDoc(gameRef, {
       status: updatedStatus,
+      endedAt,
     });
     revealScores();
   } else {
@@ -730,14 +754,16 @@ function checkTime() {
     if (now >= monday) {
       revealScores();
     } else {
-      console.log(
-        `${now} is before the expected date/time of ${monday}`
-      );
+      console.log(`${now} is before the expected date/time of ${monday}`);
     }
   }
 }
 
 function revealScores() {
+  if (gameState.status === "active") {
+    return;
+  }
+
   const { players, pot } = gameState;
   document.getElementById("results").style.display = "";
   document.getElementById("player-actions").innerHTML = "";
@@ -746,9 +772,7 @@ function revealScores() {
     const now = new Date();
     const monday = getNextMonday();
     if (now < monday) {
-      console.log(
-        `${now} is before the expected date/time of ${monday}`
-      );
+      console.log(`${now} is before the expected date/time of ${monday}`);
       document.getElementById("next-monday").innerHTML = monday;
       document.getElementById("waiting-results").style.display = "";
       document.getElementById("final-score").style.display = "none";
@@ -757,8 +781,10 @@ function revealScores() {
       document.getElementById("waiting-results").style.display = "none";
       document.getElementById("final-score").style.display = "";
       const updatedStatus = "resultsShown";
+      const endedAt = new Date();
       updateDoc(gameRef, {
         status: updatedStatus, //possible statuses:'awaitingPlayers', 'awaitingStart', 'active', 'awaitingResults', 'resultsShown'
+        endedAt,
       });
     }
   }
@@ -862,14 +888,19 @@ function updateUI() {
   if (status === "active") {
     if (
       document.getElementById("startGame").style.display == "" ||
-      document.getElementById("joinGame").style.display == ""
+      document.getElementById("joinGame").style.display == "" ||
+      document.getElementById("history").style.display == "none"
     ) {
       document.getElementById("results").style.display = "none";
       document.getElementById("startGame").style.display = "none";
       document.getElementById("joinGame").style.display = "none";
       document.getElementById("invite-link-div").style.display = "none";
+      document.getElementById("history").style.display = "";
     }
   } else if (status === "awaitingPlayers") {
+    if (document.getElementById("history").style.display == "") {
+      document.getElementById("history").style.display = "none";
+    }
     if (document.getElementById("joinGame").style.display == "none") {
       document.getElementById("joinGame").style.display = "";
       document.getElementById("invite-link-div").style.display = "";
@@ -893,6 +924,63 @@ function updateUI() {
     document.getElementById("final-score").style.display = "";
     document.getElementById("waiting-results").style.display = "none";
     document.getElementById("startGame").style.display = "";
+  }
+  const historyHTML = document.getElementById("history-contents").innerHTML;
+  const numHistoryContents = historyHTML.split("<li>").length - 1;
+  if (
+    gameState.history != undefined &&
+    gameState.history.length != numHistoryContents
+  ) {
+    updateHistoryUI();
+  }
+}
+
+function updateHistoryUI() {
+  const historyContents = document.getElementById("history-contents");
+  const { history } = gameState;
+  historyContents.innerHTML = "";
+
+  for (const event of history) {
+    const historyElement = document.createElement("li");
+    switch (event["action"]) {
+      case "check":
+        historyElement.innerHTML = `<strong>${
+          event["playerName"]
+        }</strong> (Player ${event["playerNumber"] + 1}) checked`;
+        break;
+      case "call":
+        historyElement.innerHTML = `<strong>${
+          event["playerName"]
+        }</strong> (Player ${event["playerNumber"] + 1}) called ${
+          event["amount"]
+        } chip`;
+        if (event["amount"] != 1) {
+          historyElement.innerHTML += "s";
+        }
+        historyElement.innerHTML += ` with ${event["chips"]} remaining`;
+        break;
+      case "fold":
+        historyElement.innerHTML = `<strong>${
+          event["playerName"]
+        }</strong> (Player ${event["playerNumber"] + 1}) folded`;
+        break;
+      case "raise":
+        historyElement.innerHTML = `<strong>${
+          event["playerName"]
+        }</strong> (Player ${event["playerNumber"] + 1}) raised to ${
+          event["raiseAmount"]
+        } chip`;
+        if (event["raiseAmount"] != 1) {
+          historyElement.innerHTML += "s";
+        }
+        break;
+      case "drawTeam":
+        historyElement.innerHTML = `${event["drawnTeam"]} was drawn`;
+        break;
+      default:
+        historyElement.innerHTML = `${event.toString()}`;
+    }
+    historyContents.appendChild(historyElement);
   }
 }
 
@@ -958,8 +1046,13 @@ function showGame() {
   if (!["awaitingStart", "resultsShown"].includes(gameState.status)) {
     document.getElementById("startGame").style.display = "none";
   }
-  document.getElementById("joinGame").style.display = "none";
-  document.getElementById("invite-link-div").style.display = "none";
+  if (!["awaitingPlayers", "awaitingStart"].includes(gameState.status)) {
+    document.getElementById("history").style.display = "";
+  }
+  if (gameState.status != "awaitingPlayers") {
+    document.getElementById("joinGame").style.display = "none";
+    document.getElementById("invite-link-div").style.display = "none";
+  }
 }
 
 hideGame();
