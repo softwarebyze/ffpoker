@@ -268,17 +268,22 @@ async function loadTeamData() {
 }
 
 async function joinGame() {
-  const availablePositions = [...positions];
+  const availableTeams = [...teams];
 
+  // Remove teams already assigned to other players
   for (let player of gameState.players) {
-    const playerPosition = player["position"];
-    const playerPositionIndex = availablePositions.indexOf(playerPosition);
-    availablePositions.splice(playerPositionIndex, 1);
+    const playerTeam = player["team"];
+    const teamIndex = availableTeams.indexOf(playerTeam);
+    if (teamIndex > -1) {
+      availableTeams.splice(teamIndex, 1);
+    }
   }
 
-  const positionIndex = Math.floor(Math.random() * availablePositions.length);
-  const position = availablePositions.splice(positionIndex, 1)[0];
+  // Randomly assign a team to the new player
+  const teamIndex = Math.floor(Math.random() * availableTeams.length);
+  const team = availableTeams.splice(teamIndex, 1)[0];
 
+  // Check if the player is already in the game
   for (let player of gameState.players) {
     if (player.id == playerId) return;
   }
@@ -287,7 +292,7 @@ async function joinGame() {
     players: arrayUnion({
       id: playerId,
       username: auth.currentUser.displayName,
-      position,
+      team,
       score: 0,
       inGame: true,
       bet: gameState.initialBet,
