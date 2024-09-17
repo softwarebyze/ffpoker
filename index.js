@@ -202,7 +202,7 @@ async function loadInitialGameState() {
       bettingPhase: 1,
       initialBet: 10,
       currentBet: 10,
-      drawnTeams: [],
+      drawnPositions: [],
       // history: [
       //   {}
       // ]
@@ -323,7 +323,7 @@ function startGame() {
   }));
   gameState.status = "active";
   gameState.players = updatedPlayers;
-  gameState.drawnTeams = [];
+  gameState.drawnPositions = [];
   gameState.currentPlayer = 0;
   gameState.pot = 40;
   gameState.currentBet = gameState.initialBet;
@@ -346,7 +346,7 @@ function startGame() {
   updateDoc(gameRef, {
     players: gameState.players,
     pot: gameState.pot,
-    drawnTeams: gameState.drawnTeams,
+    drawnPositions: gameState.drawnPositions,
     currentPlayer: gameState.currentPlayer,
     currentBet: gameState.currentBet,
     activePlayers: gameState.activePlayers,
