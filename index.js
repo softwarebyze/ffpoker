@@ -193,7 +193,7 @@ async function loadInitialGameState() {
         // {
         //     "inGame": true,
         //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
-        //     "position": "WR",
+        //     "team": "Dallas Cowboys",
         //     "bet": 10,
         //     "score": 0,
         //     "chips": 50
@@ -370,12 +370,12 @@ function updatePlayerInfo() {
       player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
-    const activatedPlayers = getActivatedPlayers(player.position);
+    const activatedPlayers = getActivatedPlayers(player.team);
     playersSection.innerHTML += `
       <div class="player-info ${grayClass} ${isActive ? "active" : ""}">
         <strong>${player.username}${status ? ` (${status})` : ""}</strong>
         <ul>
-          <li class="tooltip"><strong>${player.position}</strong>
+          <li class="tooltip"><strong>${player.team}</strong>
             <span class="tooltiptext">${activatedPlayers}</span>
           </li>
           <li>Bet: ${player.bet}</li>
@@ -388,11 +388,12 @@ function updatePlayerInfo() {
   updateTooltips();
 }
 
-function getActivatedPlayers(position) {
-  return gameState.drawnTeams
-    .map((team) => {
-      const teamColor = teamColors[team];
-      return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${activePlayersData[team][position]}</span>`;
+function getActivatedPlayers(team) {
+  return gameState.drawnPositions
+    .map((position) => {
+      const playerName = activePlayersData[team][position];
+      const playerPoints = teamScores[team][position];
+      return `<span>${position}: ${playerName} (${playerPoints} pts)</span>`;
     })
     .join(", ");
 }
@@ -894,7 +895,7 @@ function updateUI() {
   const numDrawnTeamsDisplayed =
     document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
   if (numDrawnTeamsDisplayed != drawnTeams.length) {
-    updateTeamUI();
+    updatePositionUI();
   }
 
   if (status === "active") {
@@ -996,19 +997,15 @@ function updateHistoryUI() {
   }
 }
 
-function updateTeamUI() {
-  document.getElementById("teams-drawn").innerHTML = "";
-  for (const team of gameState.drawnTeams) {
-    const teamColor = teamColors[team];
-    const teamLogo = teamLogos[team];
-    const teamElement = document.createElement("li");
-    teamElement.innerHTML = `${team} <img src="${teamLogo}" alt="${team} logo" style="width: 20px; vertical-align: middle; margin-left: 5px;">`;
+function updatePositionUI() {
+  document.getElementById("positions-drawn").innerHTML = "";
+  for (const position of gameState.drawnPositions) {
+    const positionElement = document.createElement("li");
+    positionElement.innerHTML = position;
     teamElement.style.listStyle = "none";
-    teamElement.style.color = teamColor.primary;
-    teamElement.style.webkitTextStroke = `0.5px ${teamColor.secondary}`;
     teamElement.style.fontWeight = "bold";
 
-    document.getElementById("teams-drawn").appendChild(teamElement);
+    document.getElementById("positions-drawn").appendChild(positionElement);
   }
 }
 
