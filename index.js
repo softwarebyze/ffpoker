@@ -668,25 +668,25 @@ function resetPlayer() {
   }
 }
 
-function drawTeam() {
-  const availableTeams = teams.filter(
-    (team) => !gameState.drawnTeams.includes(team)
+function drawPosition() {
+  const availablePositions = positions.filter(
+    (position) => !gameState.drawnPositions.includes(position)
   );
-  const team =
-    availableTeams[Math.floor(Math.random() * availableTeams.length)];
-  const updatedDrawnTeams = [...gameState.drawnTeams];
-  updatedDrawnTeams.push(team);
+  const position =
+    availablePositions[Math.floor(Math.random() * availablePositions.length)];
+  const updatedDrawnPositions = [...gameState.drawnPositions];
+  updatedDrawnPositions.push(position);
   const updatedActions = updateFoldedPlayerActions(
     gameState.actions.fill(false)
   );
-  if (updatedDrawnTeams.length < 2) {
+  if (updatedDrawnPositions.length < 2) {
     updateDoc(gameRef, {
       actions: updatedActions,
-      drawnTeams: updatedDrawnTeams,
+      drawnPositions: updatedDrawnPositions,
       history: arrayUnion({
-        action: "drawTeam",
-        drawnTeam: team,
-        numTeamDrawn: updatedDrawnTeams.length,
+        action: "drawPosition",
+        drawnPosition: position,
+        numPositionDrawn: updatedDrawnPositions.length,
       }),
     });
     updatePlayerActions();
@@ -694,12 +694,12 @@ function drawTeam() {
     const updatedBettingPhase = gameState.bettingPhase + 1;
     updateDoc(gameRef, {
       actions: updatedActions,
-      drawnTeams: updatedDrawnTeams,
+      drawnPositions: updatedDrawnPositions,
       bettingPhase: updatedBettingPhase,
       history: arrayUnion({
-        action: "drawTeam",
-        drawnTeam: team,
-        numTeamDrawn: updatedDrawnTeams.length,
+        action: "drawPosition",
+        drawnPosition: position,
+        numPositionDrawn: updatedDrawnPositions.length,
       }),
     });
     updatePlayerActions();
@@ -708,13 +708,13 @@ function drawTeam() {
     const endedAt = new Date();
     updateDoc(gameRef, {
       actions: updatedActions,
-      drawnTeams: updatedDrawnTeams,
+      drawnPositions: updatedDrawnPositions,
       status: updatedStatus,
       endedAt,
       history: arrayUnion({
-        action: "drawTeam",
-        drawnTeam: team,
-        numTeamDrawn: updatedDrawnTeams.length,
+        action: "drawPosition",
+        drawnPosition: position,
+        numPositionDrawn: updatedDrawnPositions.length,
       }),
     });
     revealScores();
@@ -746,7 +746,7 @@ function goToNextPhaseOrGameEnd() {
     updateDoc(gameRef, {
       bettingPhase: updatedBettingPhase,
     });
-    drawTeam();
+    drawPosition();
     resetPlayer();
   }
 }
