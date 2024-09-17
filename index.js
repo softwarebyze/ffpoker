@@ -334,7 +334,7 @@ function startGame() {
   gameState.startedAt = new Date();
   gameState.endedAt = null; // Considering how to handle it
 
-  document.getElementById("teams-drawn").innerHTML = "";
+  document.getElementById("positions-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
   document.getElementById("history").style.display = "";
 
@@ -734,7 +734,7 @@ function updateFoldedPlayerActions(actions) {
 }
 
 function goToNextPhaseOrGameEnd() {
-  if (gameState.bettingPhase === 3 || gameState.drawnTeams.length === 2) {
+  if (gameState.bettingPhase === 3 || gameState.drawnPositions.length === 2) {
     const updatedStatus = "awaitingResults";
     const endedAt = new Date();
     updateDoc(gameRef, {
@@ -877,7 +877,7 @@ function logGameState() {
   console.log(`Current Bet: ${gameState.currentBet}`);
   console.log(`Pot: ${gameState.pot}`);
   console.log(`Betting Phase: ${gameState.bettingPhase}`);
-  console.log(`Drawn Teams: ${gameState.drawnTeams.join(", ")}`);
+  console.log(`Drawn Positions: ${gameState.drawnPositions.join(", ")}`);
   console.log(
     `Player Actions: ${gameState.actions
       .map((action, index) => `Player ${index + 1}: ${action}`)
@@ -889,11 +889,12 @@ function updateUI() {
   if (gameState == undefined) {
     return;
   }
-  const { drawnTeams, status } = gameState;
+  const { drawnPositions, status } = gameState;
 
-  const numDrawnTeamsDisplayed =
-    document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
-  if (numDrawnTeamsDisplayed != drawnTeams.length) {
+  const numDrawnPositionsDisplayed =
+    document.getElementById("positions-drawn").innerHTML.split("<li").length -
+    1;
+  if (numDrawnPositionsDisplayed != drawnPositions.length) {
     updatePositionUI();
   }
 
@@ -986,8 +987,8 @@ function updateHistoryUI() {
           historyElement.innerHTML += "s";
         }
         break;
-      case "drawTeam":
-        historyElement.innerHTML = `${event["drawnTeam"]} was drawn`;
+      case "drawPosition":
+        historyElement.innerHTML = `${event["drawnPosition"]} was drawn`;
         break;
       default:
         historyElement.innerHTML = `${event.toString()}`;
@@ -1001,8 +1002,8 @@ function updatePositionUI() {
   for (const position of gameState.drawnPositions) {
     const positionElement = document.createElement("li");
     positionElement.innerHTML = position;
-    teamElement.style.listStyle = "none";
-    teamElement.style.fontWeight = "bold";
+    positionElement.style.listStyle = "none";
+    positionElement.style.fontWeight = "bold";
 
     document.getElementById("positions-drawn").appendChild(positionElement);
   }
@@ -1040,7 +1041,7 @@ function updateTimer() {
 }
 
 function hideGame() {
-  document.getElementById("team-info").style.display = "none";
+  document.getElementById("position-info").style.display = "none";
   document.getElementById("results").style.display = "none";
   document.getElementById("raiseDiv").style.display = "none";
   document.getElementById("players-section").style.display = "none";
@@ -1049,7 +1050,7 @@ function hideGame() {
 }
 
 function showGame() {
-  document.getElementById("team-info").style.display = "";
+  document.getElementById("position-info").style.display = "";
   document.getElementById("players-section").style.display = "";
   if (!["awaitingStart", "resultsShown"].includes(gameState.status)) {
     document.getElementById("startGame").style.display = "none";
