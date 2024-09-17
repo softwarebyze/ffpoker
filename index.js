@@ -193,7 +193,8 @@ async function loadInitialGameState() {
         // {
         //     "inGame": true,
         //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
-        //     "position": "WR",
+        //     "visiblePosition": "WR",
+        //     "hiddenPosition": "RB",
         //     "bet": 10,
         //     "score": 0,
         //     "chips": 50
@@ -270,14 +271,15 @@ async function loadTeamData() {
 async function joinGame() {
   const availablePositions = [...positions];
 
-  for (let player of gameState.players) {
-    const playerPosition = player["position"];
-    const playerPositionIndex = availablePositions.indexOf(playerPosition);
-    availablePositions.splice(playerPositionIndex, 1);
-  }
-
+  // Assign visiblePosition
   const positionIndex = Math.floor(Math.random() * availablePositions.length);
-  const position = availablePositions.splice(positionIndex, 1)[0];
+  const visiblePosition = availablePositions.splice(positionIndex, 1)[0];
+
+  // Assign hiddenPosition
+  const hiddenPositionIndex = Math.floor(
+    Math.random() * availablePositions.length
+  );
+  const hiddenPosition = availablePositions.splice(hiddenPositionIndex, 1)[0];
 
   for (let player of gameState.players) {
     if (player.id == playerId) return;
@@ -287,7 +289,8 @@ async function joinGame() {
     players: arrayUnion({
       id: playerId,
       username: auth.currentUser.displayName,
-      position,
+      visiblePosition,
+      hiddenPosition,
       score: 0,
       inGame: true,
       bet: gameState.initialBet,
@@ -365,14 +368,21 @@ function updatePlayerInfo() {
       player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
-    const activatedPlayers = getActivatedPlayers(player.position);
+    const activatedPlayers = getActivatedPlayers(player.visiblePosition);
+    let hiddenPositionHTML = "";
+
+    if (player.id === playerId) {
+      hiddenPositionHTML = `<li><strong>Hidden Position: ${player.hiddenPosition}</strong></li>`;
+    }
+
     playersSection.innerHTML += `
       <div class="player-info ${grayClass} ${isActive ? "active" : ""}">
         <strong>${player.username}${status ? ` (${status})` : ""}</strong>
         <ul>
-          <li class="tooltip"><strong>${player.position}</strong>
+          <li class="tooltip"><strong>${player.visiblePosition}</strong>
             <span class="tooltiptext">${activatedPlayers}</span>
           </li>
+          ${hiddenPositionHTML}
           <li>Bet: ${player.bet}</li>
           <li>Chips: ${player.chips}</li>
         </ul>
@@ -797,11 +807,22 @@ function revealScores() {
   }
 
   players.forEach((player) => {
-    gameState.drawnTeams.forEach((team) => {
-      if (teamScores[team][player.position] && player.inGame) {
-        player.score += teamScores[team][player.position];
+    if (player.inGame) {
+      const team1 = gameState.drawnTeams[0];
+      const team2 = gameState.drawnTeams[1];
+
+      let score1 = 0;
+      let score2 = 0;
+
+      if (teamScores[team1][player.visiblePosition]) {
+        score1 = teamScores[team1][player.visiblePosition];
       }
-    });
+      if (teamScores[team2][player.hiddenPosition]) {
+        score2 = teamScores[team2][player.hiddenPosition];
+      }
+
+      player.score = score1 + score2;
+    }
   });
 
   const remainingPlayers = players.filter((p) => p.inGame);
@@ -819,20 +840,34 @@ function revealWinner(winner) {
   const { players, pot } = gameState;
   const scoresText = players
     .map((p, index) => {
-      const activePlayers = gameState.drawnTeams
-        .map((team) => {
-          const playerName = activePlayersData[team][p.position];
-          const playerPoints = teamScores[team][p.position];
-          const teamColor = teamColors[team];
-          return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${playerName} (${playerPoints} pts)</span>`;
-        })
-        .join(", ");
+      const team1 = gameState.drawnTeams[0];
+      const team2 = gameState.drawnTeams[1];
+      const playerName1 = activePlayersData[team1][p.visiblePosition];
+      const playerPoints1 = teamScores[team1][p.visiblePosition] || 0;
+      const playerName2 = activePlayersData[team2][p.hiddenPosition];
+      const playerPoints2 = teamScores[team2][p.hiddenPosition] || 0;
+      const totalPoints = p.score;
+
+      const teamColor1 = teamColors[team1];
+      const teamColor2 = teamColors[team2];
+
       const grayClass = p.inGame ? "" : "light-gray-text";
       return `<span class="${grayClass}">Player ${index + 1}: ${
-        p.score
+        totalPoints
       } points, Chips: ${
         p.chips
-      }, Active Football Players: ${activePlayers}</span>`;
+      },<br>
+      ${team1} / ${p.visiblePosition}: <span style="color: ${
+        teamColor1.primary
+      }; -webkit-text-stroke: 0.5px ${
+        teamColor1.secondary
+      };">${playerName1} (${playerPoints1} pts)</span><br>
+      ${team2} / ${p.hiddenPosition}: <span style="color: ${
+        teamColor2.primary
+      }; -webkit-text-stroke: 0.5px ${
+        teamColor2.secondary
+      };">${playerName2} (${playerPoints2} pts)</span>
+      </span>`;
     })
     .join("<br>");
 
