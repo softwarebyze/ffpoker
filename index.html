@@ -23,6 +23,19 @@
       .action-buttons button {
         margin: 5px;
       }
+
+      #my-games {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+      }
+
+      #my-games .game-preview {
+          border: 1px solid black;
+          /* padding: 10px; */
+          /* width: 150px; */
+          text-align: center;
+      }
     </style>
   </head>
 
@@ -39,8 +52,10 @@
       <span id="error-text"></span>
     </div>
     <div id="join-create-game" style="display: none">
+      Username: <span id="username"></span><br />
       <div>
-        Username: <span id="username"></span><br />
+        My Games
+        <div id="my-games"></div>
         <button onclick="joinOrCreateRandomGame()">Play Random Game</button
         ><br />
         <button onclick="createPrivateGame()">Create Private Game</button>

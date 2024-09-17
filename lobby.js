@@ -1,15 +1,15 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
+  getAuth,
+  signInAnonymously,
+  updateProfile,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
   collection,
   getDocs,
   getFirestore,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  updateProfile,
-  getAuth,
-  signInAnonymously,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -40,6 +40,28 @@ if (auth.currentUser?.displayName) {
   document.getElementById("create-username").style.display = "none";
   document.getElementById("join-create-game").style.display = "";
   document.getElementById("username").innerHTML = auth.currentUser.displayName;
+  getAndShowMyGames();
+}
+
+async function getAndShowMyGames() {
+  const userText = document.getElementById("user-text").value;
+  const myGames = querySnapshot.docs.filter((doc) => {
+    const gameData = doc.data();
+    console.log(gameData);
+    const players = gameData["players"];
+    return players.some((player) => player.id === auth.currentUser.uid);
+  });
+  console.log(myGames);
+  myGames.forEach((doc) => {
+    const gameData = doc.data();
+    const gameId = doc.id;
+    const players = gameData["players"];
+    console.log(gameId, players.length, gameData);
+    document.getElementById("my-games").innerHTML += gamePreview(
+      gameId,
+      gameData
+    );
+  });
 }
 
 async function addUsername() {
@@ -52,6 +74,7 @@ async function addUsername() {
     await updateProfile(auth.currentUser, {
       displayName: userText,
     });
+
     document.getElementById("error-text").innerHTML = "";
     document.getElementById("username").innerHTML = userText;
     document.getElementById("create-username").style.display = "none";
@@ -116,6 +139,15 @@ function getCharacterString(length) {
   }
   const finalChar = finalCharArr.toString().replaceAll(",", "");
   return finalChar;
+}
+
+function gamePreview(gameId, gameData) {
+  const address = window.location.origin;
+  return `<a href="${address}/ffpoker?gameId=${gameId}" class="game-preview">
+    <h3>Game ID: ${gameId}</h3>
+    <p>Players: ${gameData.players.map((player) => player.username).join(", ")}</p>
+    <p>Status: ${gameData.status}</p>
+  </a>`;
 }
 
 window.addUsername = addUsername;
