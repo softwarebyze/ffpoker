@@ -802,9 +802,9 @@ function revealScores() {
   }
 
   players.forEach((player) => {
-    gameState.drawnTeams.forEach((team) => {
-      if (teamScores[team][player.position] && player.inGame) {
-        player.score += teamScores[team][player.position];
+    gameState.drawnPositions.forEach((position) => {
+      if (teamScores[player.team][position] && player.inGame) {
+        player.score += teamScores[player.team][position];
       }
     });
   });
