@@ -825,12 +825,11 @@ function revealWinner(winner) {
   const { players, pot } = gameState;
   const scoresText = players
     .map((p, index) => {
-      const activePlayers = gameState.drawnTeams
-        .map((team) => {
-          const playerName = activePlayersData[team][p.position];
-          const playerPoints = teamScores[team][p.position];
-          const teamColor = teamColors[team];
-          return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${playerName} (${playerPoints} pts)</span>`;
+      const activePlayers = gameState.drawnPositions
+        .map((position) => {
+          const playerName = activePlayersData[p.team][position];
+          const playerPoints = teamScores[p.team][position];
+          return `<span>${position}: ${playerName} (${playerPoints} pts)</span>`;
         })
         .join(", ");
       const grayClass = p.inGame ? "" : "light-gray-text";
