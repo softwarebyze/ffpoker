@@ -368,7 +368,7 @@ function updatePlayerInfo() {
       player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
-    const activatedPlayers = getActivatedPlayers(player.visiblePosition);
+    const activatedPlayers = getActivatedPlayers(player);
     let hiddenPositionHTML = "";
 
     if (player.id === playerId) {
@@ -393,11 +393,23 @@ function updatePlayerInfo() {
   updateTooltips();
 }
 
-function getActivatedPlayers(position) {
+function getActivatedPlayers(player) {
   return gameState.drawnTeams
-    .map((team) => {
+    .map((team, i) => {
+      if (i > 0) {
+        if (player.id === playerId) {
+          return `Hidden: ${activePlayersData[team][player.hiddenPosition]}`;
+        } // visible position goes with first drawn team
+        else {
+          return "hidden";
+        }
+      }
       const teamColor = teamColors[team];
-      return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${activePlayersData[team][position]}</span>`;
+      return `<span style="color: ${
+        teamColor.primary
+      }; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${
+        activePlayersData[team][player.visiblePosition]
+      }</span>`;
     })
     .join(", ");
 }
@@ -852,11 +864,9 @@ function revealWinner(winner) {
       const teamColor2 = teamColors[team2];
 
       const grayClass = p.inGame ? "" : "light-gray-text";
-      return `<span class="${grayClass}">Player ${index + 1}: ${
-        totalPoints
-      } points, Chips: ${
-        p.chips
-      },<br>
+      return `<span class="${grayClass}">Player ${
+        index + 1
+      }: ${totalPoints} points, Chips: ${p.chips},<br>
       ${team1} / ${p.visiblePosition}: <span style="color: ${
         teamColor1.primary
       }; -webkit-text-stroke: 0.5px ${
