@@ -396,15 +396,20 @@ function updatePlayerInfo() {
 function getActivatedPlayers(player) {
   return gameState.drawnTeams
     .map((team, i) => {
+      const teamColor = teamColors[team];
       if (i > 0) {
         if (player.id === playerId) {
-          return `Hidden: ${activePlayersData[team][player.hiddenPosition]}`;
-        } // visible position goes with first drawn team
-        else {
-          return "hidden";
+          return `<span style="color: ${
+            teamColor.primary
+          }; -webkit-text-stroke: 0.5px ${teamColor.secondary};">
+            Hidden: ${activePlayersData[team][player.hiddenPosition]}
+            </span>`;
+        } else {
+          return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">
+            Unknown ${team} Player
+            </span>`;
         }
       }
-      const teamColor = teamColors[team];
       return `<span style="color: ${
         teamColor.primary
       }; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${
