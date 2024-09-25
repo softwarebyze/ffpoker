@@ -13,12 +13,12 @@
     {
       "team": "Baltimore Ravens",
       "primary_color": "#241773",
-      "secondary_color": "#000000"
+      "secondary_color": "#D8D8D8"
     },
     {
       "team": "Buffalo Bills",
-      "primary_color": "#00338D",
-      "secondary_color": "#C60C30"
+      "primary_color": "#C60C30",
+      "secondary_color": "#00338D"
     },
     {
       "team": "Carolina Panthers",
@@ -27,8 +27,8 @@
     },
     {
       "team": "Chicago Bears",
-      "primary_color": "#0B162A",
-      "secondary_color": "#C83803"
+      "primary_color": "#C83803",
+      "secondary_color": "#0B162A"
     },
     {
       "team": "Cincinnati Bengals",
@@ -62,8 +62,8 @@
     },
     {
       "team": "Houston Texans",
-      "primary_color": "#03202F",
-      "secondary_color": "#A71930"
+      "primary_color": "#A71930",
+      "secondary_color": "#03202F"
     },
     {
       "team": "Indianapolis Colts",
@@ -117,13 +117,13 @@
     },
     {
       "team": "New York Giants",
-      "primary_color": "#0B2265",
-      "secondary_color": "#A71930"
+      "primary_color": "#A71930",
+      "secondary_color": "#0B2265"
     },
     {
       "team": "New York Jets",
       "primary_color": "#125740",
-      "secondary_color": "#000000"
+      "secondary_color": "#FFFFFF"
     },
     {
       "team": "Philadelphia Eagles",
@@ -142,8 +142,8 @@
     },
     {
       "team": "Seattle Seahawks",
-      "primary_color": "#002244",
-      "secondary_color": "#69BE28"
+      "primary_color": "#69BE28",
+      "secondary_color": "#002244"
     },
     {
       "team": "Tampa Bay Buccaneers",
@@ -157,8 +157,8 @@
     },
     {
       "team": "Washington Commanders",
-      "primary_color": "#5A1414",
-      "secondary_color": "#FFB612"
+      "primary_color": "#FFB612",
+      "secondary_color": "#5A1414"
     }
   ]
 }
