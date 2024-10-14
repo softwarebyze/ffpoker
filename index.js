@@ -139,7 +139,7 @@ function getGameId() {
   }
 }
 
-const numPlayers = 4;
+let numPlayers = 6;
 const gameId = getGameId();
 document.getElementById("game-id").innerHTML = gameId;
 let playerId;
@@ -246,24 +246,20 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
-  if (
-    gameState.status == "resultsShown" ||
-    gameState.status == "awaitingStart"
-  ) {
-    document.getElementById("startGame").style.display = "";
-  }
+
 });
 
 async function resetGame() {
+  const oldNumPlayers = gameState.players.length
   deleteGame(gameId);
   await loadTeamData();
   await loadInitialGameState();
   hideGame();
   showGame();
-  if (gameState.players.length < numPlayers) {
+  if (gameState.players.length < oldNumPlayers) {
     await joinGame();
   }
-  if (gameState.players.length === numPlayers) {
+  if (gameState.players.length === oldNumPlayers) {
     startGame();
   }
 }
@@ -327,15 +323,19 @@ async function joinGame() {
   const newPlayerIndex = numCurrentPlayers;
   document.getElementById("player-number").innerHTML = newPlayerIndex;
 
-  if (gameState.players.length == numPlayers) {
+  //if (gameState.players.length == numPlayers) {
     // When the final person joins, automatically start the game
-    await startGame();
-  }
+    //await startGame();
+  //}
 }
 
 function startGame() {
   const DEFAULT_BET = 10;
   const DEFAULT_CHIPS = 50;
+  if (gameState.players.length < 2) {
+    alert("At least 2 players are needed to start the game.");
+    return;
+  }
   const originalPlayers = gameState.players;
   const updatedPlayers = originalPlayers.map((player) => ({
     ...player,
@@ -343,15 +343,17 @@ function startGame() {
     chips: DEFAULT_CHIPS,
     inGame: true,
   }));
+
   gameState.status = "active";
   gameState.players = updatedPlayers;
+  numPlayers = gameState.players.length
   gameState.drawnTeams = [];
   gameState.currentPlayer = 0;
-  gameState.pot = 40;
+  gameState.pot = numPlayers * 10;
   gameState.currentBet = gameState.initialBet;
-  gameState.activePlayers = [...Array(numPlayers).keys()];
+  gameState.activePlayers = [...Array(gameState.players.length).keys()];
   gameState.bettingPhase = 1;
-  gameState.actions = new Array(numPlayers).fill(false);
+  gameState.actions = new Array(gameState.players.length).fill(false);
   gameState.history = [];
   gameState.startedAt = new Date();
   gameState.endedAt = null; // Considering how to handle it
@@ -684,9 +686,9 @@ function playerFold() {
 function nextPlayer() {
   const { players } = gameState;
 
-  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % numPlayers;
+  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
   while (!players[updatedCurrentPlayer].inGame) {
-    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % numPlayers;
+    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % gameState.players.length;
   }
 
   updateDoc(gameRef, {
@@ -797,18 +799,18 @@ function goToNextPhaseOrGameEnd() {
   }
 }
 
-function getNextMonday() {
+function checkSundayEnded() {
   const startedAt = gameState.startedAt.toDate();
-  const nextMonday = new Date(startedAt);
-  nextMonday.setDate(startedAt.getDate() + ((1 + 7 - startedAt.getDay()) % 7));
-  nextMonday.setHours(23, 59, 59, 999); // Set to 23:59:59.999 on Monday
-  return nextMonday;
+  const nextSunday = new Date(startedAt);
+  nextSunday.setDate(startedAt.getDate() + ((7 - startedAt.getDay()) % 7));
+  nextSunday.setHours(23, 59, 59, 999); // Set to 23:59:59.999 on Monday
+  return nextSunday;
 }
 
 function checkTime() {
   if (gameState.status === "awaitingResults") {
     const now = new Date();
-    const monday = getNextMonday();
+    const monday = checkSundayEnded();
     if (now >= monday) {
       revealScores();
     } else {
@@ -828,7 +830,7 @@ function revealScores() {
 
   if (gameState.status === "awaitingResults") {
     const now = new Date();
-    const monday = getNextMonday();
+    const monday = checkSundayEnded();
     if (now < monday) {
       console.log(`${now} is before the expected date/time of ${monday}`);
       document.getElementById("next-monday").innerHTML = monday;
