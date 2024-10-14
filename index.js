@@ -78,7 +78,7 @@ async function loadTeams() {
     // Check if the response is ok
     if (!response.ok) {
         // Return a default set of teams if fetching fails
-        return ["Detroit Lions", "Dallas Cowboys", "Denver Broncos"];
+        return ["Detroit Lions", "Dallas Cowboys", "Denver Broncos", "Philadelphia Eagles", "New York Giants", "Washington Commanders"];
     }
 
     const schedule = await response.json();
