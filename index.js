@@ -37,40 +37,64 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const positions = ["QB", "RB", "WR", "Def", "TE", "K"];
-const teams = [
-  "Arizona Cardinals",
-  "Atlanta Falcons",
-  //"Baltimore Ravens",      //these teams already played week 1 so commented out
-  "Buffalo Bills",
-  "Carolina Panthers",
-  "Chicago Bears",
-  "Cincinnati Bengals",
-  "Cleveland Browns",
-  "Dallas Cowboys",
-  "Denver Broncos",
-  "Detroit Lions",
-  //"Green Bay Packers",
-  "Houston Texans",
-  "Indianapolis Colts",
-  "Jacksonville Jaguars",
-  //"Kansas City Chiefs",
-  "Las Vegas Raiders",
-  "Los Angeles Chargers",
-  "Los Angeles Rams",
-  "Miami Dolphins",
-  "Minnesota Vikings",
-  "New England Patriots",
-  "New Orleans Saints",
-  "New York Giants",
-  "New York Jets",
-  //"Philadelphia Eagles",
-  "Pittsburgh Steelers",
-  "San Francisco 49ers",
-  "Seattle Seahawks",
-  "Tampa Bay Buccaneers",
-  "Tennessee Titans",
-  "Washington Commanders",
-];
+// Function to get the current week of the NFL season
+
+let teams = []; // Declare teams array globally, fill it from json of teams that play next sunday
+
+// Function to get the current NFL week
+function getNFLWeek() {
+    const seasonStart = new Date(Date.UTC(2024, 8, 8, 5, 0, 0)); // September 8, 2024, at 10 PM Pacific (converted to UTC)
+    const now = new Date();
+
+    // Calculate the difference in time (milliseconds)
+    let diff = now - seasonStart;
+
+    // Convert milliseconds to weeks (1 week = 7 days = 7 * 24 * 60 * 60 * 1000 ms)
+    const msInWeek = 7 * 24 * 60 * 60 * 1000;
+
+    // Get the week number by dividing the time difference by msInWeek
+    let week = Math.floor(diff / msInWeek) + 2;
+
+    // If it's Sunday after 10 PM Pacific, move to the next week
+    if (now.getUTCDay() === 0 && now.getUTCHours() >= 5) {
+        week += 1;
+    }
+    // Ensure we don't go out of bounds
+    if (week > 18) {
+        week = 18;
+    } else if (week < 1) {
+        week = 1;
+    }
+    return week;
+}
+
+// Function to load the corresponding teams based on the current NFL week
+async function loadTeams() {
+    const week = getNFLWeek();
+
+    // Fetch json
+    const response = await fetch("sundays_nfl_schedule_2024.json");
+
+    // Check if the response is ok
+    if (!response.ok) {
+        // Return a default set of teams if fetching fails
+        return ["Detroit Lions", "Dallas Cowboys", "Denver Broncos", "Philadelphia Eagles", "New York Giants", "Washington Commanders"];
+    }
+
+    const schedule = await response.json();
+
+    // Get the teams for the current week
+    const teams = schedule[`Week ${week}`];
+    return teams;
+}
+
+async function initializeTeams() {
+    teams = await loadTeams();
+    console.log("Teams array populated:", teams);
+}
+
+// Call the initialization function
+initializeTeams();
 
 let activePlayersData = {};
 let teamScores = {};
@@ -115,7 +139,7 @@ function getGameId() {
   }
 }
 
-const numPlayers = 4;
+let numPlayers = 6;
 const gameId = getGameId();
 document.getElementById("game-id").innerHTML = gameId;
 let playerId;
@@ -221,24 +245,20 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
-  if (
-    gameState.status == "resultsShown" ||
-    gameState.status == "awaitingStart"
-  ) {
-    document.getElementById("startGame").style.display = "";
-  }
+
 });
 
 async function resetGame() {
+  const oldNumPlayers = gameState.players.length
   deleteGame(gameId);
   await loadTeamData();
   await loadInitialGameState();
   hideGame();
   showGame();
-  if (gameState.players.length < numPlayers) {
+  if (gameState.players.length < oldNumPlayers) {
     await joinGame();
   }
-  if (gameState.players.length === numPlayers) {
+  if (gameState.players.length === oldNumPlayers) {
     startGame();
   }
 }
@@ -305,15 +325,19 @@ async function joinGame() {
   const newPlayerIndex = numCurrentPlayers;
   document.getElementById("player-number").innerHTML = newPlayerIndex;
 
-  if (gameState.players.length == numPlayers) {
+  //if (gameState.players.length == numPlayers) {
     // When the final person joins, automatically start the game
-    await startGame();
-  }
+    //await startGame();
+  //}
 }
 
 function startGame() {
   const DEFAULT_BET = 10;
   const DEFAULT_CHIPS = 50;
+  if (gameState.players.length < 2) {
+    alert("At least 2 players are needed to start the game.");
+    return;
+  }
   const originalPlayers = gameState.players;
   const updatedPlayers = originalPlayers.map((player) => ({
     ...player,
@@ -321,15 +345,17 @@ function startGame() {
     chips: DEFAULT_CHIPS,
     inGame: true,
   }));
+
   gameState.status = "active";
   gameState.players = updatedPlayers;
+  numPlayers = gameState.players.length
   gameState.drawnPositions = [];
   gameState.currentPlayer = 0;
-  gameState.pot = 40;
+  gameState.pot = numPlayers * 10;
   gameState.currentBet = gameState.initialBet;
-  gameState.activePlayers = [...Array(numPlayers).keys()];
+  gameState.activePlayers = [...Array(gameState.players.length).keys()];
   gameState.bettingPhase = 1;
-  gameState.actions = new Array(numPlayers).fill(false);
+  gameState.actions = new Array(gameState.players.length).fill(false);
   gameState.history = [];
   gameState.startedAt = new Date();
   gameState.endedAt = null; // Considering how to handle it
@@ -639,9 +665,9 @@ function playerFold() {
 function nextPlayer() {
   const { players } = gameState;
 
-  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % numPlayers;
+  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
   while (!players[updatedCurrentPlayer].inGame) {
-    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % numPlayers;
+    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % gameState.players.length;
   }
 
   updateDoc(gameRef, {
@@ -752,18 +778,18 @@ function goToNextPhaseOrGameEnd() {
   }
 }
 
-function getNextMonday() {
+function checkSundayEnded() {
   const startedAt = gameState.startedAt.toDate();
-  const nextMonday = new Date(startedAt);
-  nextMonday.setDate(startedAt.getDate() + ((1 + 7 - startedAt.getDay()) % 7));
-  nextMonday.setHours(23, 59, 59, 999); // Set to 23:59:59.999 on Monday
-  return nextMonday;
+  const nextSunday = new Date(startedAt);
+  nextSunday.setDate(startedAt.getDate() + ((7 - startedAt.getDay()) % 7));
+  nextSunday.setHours(23, 59, 59, 999); // Set to 23:59:59.999 on Monday
+  return nextSunday;
 }
 
 function checkTime() {
   if (gameState.status === "awaitingResults") {
     const now = new Date();
-    const monday = getNextMonday();
+    const monday = checkSundayEnded();
     if (now >= monday) {
       revealScores();
     } else {
@@ -783,7 +809,7 @@ function revealScores() {
 
   if (gameState.status === "awaitingResults") {
     const now = new Date();
-    const monday = getNextMonday();
+    const monday = checkSundayEnded();
     if (now < monday) {
       console.log(`${now} is before the expected date/time of ${monday}`);
       document.getElementById("next-monday").innerHTML = monday;
