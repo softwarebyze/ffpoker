@@ -43,54 +43,61 @@ let teams = []; // Declare teams array globally, fill it from json of teams that
 
 // Function to get the current NFL week
 function getNFLWeek() {
-    const seasonStart = new Date(Date.UTC(2024, 8, 8, 5, 0, 0)); // September 8, 2024, at 10 PM Pacific (converted to UTC)
-    const now = new Date();
+  const seasonStart = new Date(Date.UTC(2024, 8, 8, 5, 0, 0)); // September 8, 2024, at 10 PM Pacific (converted to UTC)
+  const now = new Date();
 
-    // Calculate the difference in time (milliseconds)
-    let diff = now - seasonStart;
+  // Calculate the difference in time (milliseconds)
+  let diff = now - seasonStart;
 
-    // Convert milliseconds to weeks (1 week = 7 days = 7 * 24 * 60 * 60 * 1000 ms)
-    const msInWeek = 7 * 24 * 60 * 60 * 1000;
+  // Convert milliseconds to weeks (1 week = 7 days = 7 * 24 * 60 * 60 * 1000 ms)
+  const msInWeek = 7 * 24 * 60 * 60 * 1000;
 
-    // Get the week number by dividing the time difference by msInWeek
-    let week = Math.floor(diff / msInWeek) + 2;
+  // Get the week number by dividing the time difference by msInWeek
+  let week = Math.floor(diff / msInWeek) + 2;
 
-    // If it's Sunday after 10 PM Pacific, move to the next week
-    if (now.getUTCDay() === 0 && now.getUTCHours() >= 5) {
-        week += 1;
-    }
-    // Ensure we don't go out of bounds
-    if (week > 18) {
-        week = 18;
-    } else if (week < 1) {
-        week = 1;
-    }
-    return week;
+  // If it's Sunday after 10 PM Pacific, move to the next week
+  if (now.getUTCDay() === 0 && now.getUTCHours() >= 5) {
+    week += 1;
+  }
+  // Ensure we don't go out of bounds
+  if (week > 18) {
+    week = 18;
+  } else if (week < 1) {
+    week = 1;
+  }
+  return week;
 }
 
 // Function to load the corresponding teams based on the current NFL week
 async function loadTeams() {
-    const week = getNFLWeek();
+  const week = getNFLWeek();
 
-    // Fetch json
-    const response = await fetch("sundays_nfl_schedule_2024.json");
+  // Fetch json
+  const response = await fetch("sundays_nfl_schedule_2024.json");
 
-    // Check if the response is ok
-    if (!response.ok) {
-        // Return a default set of teams if fetching fails
-        return ["Detroit Lions", "Dallas Cowboys", "Denver Broncos", "Philadelphia Eagles", "New York Giants", "Washington Commanders"];
-    }
+  // Check if the response is ok
+  if (!response.ok) {
+    // Return a default set of teams if fetching fails
+    return [
+      "Detroit Lions",
+      "Dallas Cowboys",
+      "Denver Broncos",
+      "Philadelphia Eagles",
+      "New York Giants",
+      "Washington Commanders",
+    ];
+  }
 
-    const schedule = await response.json();
+  const schedule = await response.json();
 
-    // Get the teams for the current week
-    const teams = schedule[`Week ${week}`];
-    return teams;
+  // Get the teams for the current week
+  const teams = schedule[`Week ${week}`];
+  return teams;
 }
 
 async function initializeTeams() {
-    teams = await loadTeams();
-    console.log("Teams array populated:", teams);
+  teams = await loadTeams();
+  console.log("Teams array populated:", teams);
 }
 
 // Call the initialization function
@@ -217,7 +224,8 @@ async function loadInitialGameState() {
         // {
         //     "inGame": true,
         //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
-        //     "team": "Dallas Cowboys",
+        //     "visibleTeam": "Dallas Cowboys",
+        //     "hiddenTeam": "New York Jets",
         //     "bet": 10,
         //     "score": 0,
         //     "chips": 50
@@ -245,11 +253,10 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
-
 });
 
 async function resetGame() {
-  const oldNumPlayers = gameState.players.length
+  const oldNumPlayers = gameState.players.length;
   deleteGame(gameId);
   await loadTeamData();
   await loadInitialGameState();
@@ -290,17 +297,14 @@ async function loadTeamData() {
 async function joinGame() {
   const availableTeams = [...teams];
 
-  // Remove teams already assigned to other players
-  for (let player of gameState.players) {
-    const playerTeam = player["team"];
-    const teamIndex = availableTeams.indexOf(playerTeam);
-    if (teamIndex > -1) {
-      availableTeams.splice(teamIndex, 1);
-    }
-  }
-
-  // Randomly assign a team to the new player
+  // Assign visibleTeam
   const teamIndex = Math.floor(Math.random() * availableTeams.length);
+  const visibleTeam = availableTeams.splice(teamIndex, 1)[0];
+
+  // Assign hiddenTeam
+  const hiddenTeamIndex = Math.floor(Math.random() * availableTeams.length);
+  const hiddenTeam = availableTeams.splice(hiddenTeamIndex, 1)[0];
+
   const team = availableTeams.splice(teamIndex, 1)[0];
 
   // Check if the player is already in the game
@@ -312,7 +316,8 @@ async function joinGame() {
     players: arrayUnion({
       id: playerId,
       username: auth.currentUser.displayName,
-      team,
+      visibleTeam,
+      hiddenTeam,
       score: 0,
       inGame: true,
       bet: gameState.initialBet,
@@ -326,8 +331,8 @@ async function joinGame() {
   document.getElementById("player-number").innerHTML = newPlayerIndex;
 
   //if (gameState.players.length == numPlayers) {
-    // When the final person joins, automatically start the game
-    //await startGame();
+  // When the final person joins, automatically start the game
+  //await startGame();
   //}
 }
 
@@ -348,7 +353,7 @@ function startGame() {
 
   gameState.status = "active";
   gameState.players = updatedPlayers;
-  numPlayers = gameState.players.length
+  numPlayers = gameState.players.length;
   gameState.drawnPositions = [];
   gameState.currentPlayer = 0;
   gameState.pot = numPlayers * 10;
@@ -396,14 +401,21 @@ function updatePlayerInfo() {
       player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
-    const activatedPlayers = getActivatedPlayers(player.team);
+    const activatedPlayers = getActivatedPlayers(player.visibleTeam);
+    let hiddenTeamHTML = "";
+
+    if (player.id === playerId) {
+      hiddenTeamHTML = `<li><strong>Hidden Team: ${player.hiddenTeam}</strong></li>`;
+    }
+
     playersSection.innerHTML += `
       <div class="player-info ${grayClass} ${isActive ? "active" : ""}">
         <strong>${player.username}${status ? ` (${status})` : ""}</strong>
         <ul>
-          <li class="tooltip"><strong>${player.team}</strong>
+          <li class="tooltip"><strong>${player.visibleTeam}</strong>
             <span class="tooltiptext">${activatedPlayers}</span>
           </li>
+          ${hiddenTeamHTML}
           <li>Bet: ${player.bet}</li>
           <li>Chips: ${player.chips}</li>
         </ul>
@@ -665,9 +677,11 @@ function playerFold() {
 function nextPlayer() {
   const { players } = gameState;
 
-  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
+  let updatedCurrentPlayer =
+    (gameState.currentPlayer + 1) % gameState.players.length;
   while (!players[updatedCurrentPlayer].inGame) {
-    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % gameState.players.length;
+    updatedCurrentPlayer =
+      (updatedCurrentPlayer + 1) % gameState.players.length;
   }
 
   updateDoc(gameRef, {
@@ -829,11 +843,19 @@ function revealScores() {
   }
 
   players.forEach((player) => {
-    gameState.drawnPositions.forEach((position) => {
-      if (teamScores[player.team][position] && player.inGame) {
-        player.score += teamScores[player.team][position];
-      }
-    });
+    if (player.inGame) {
+      // score = (player at team 1 / position 1) + (player at team 2 / position 2)
+      let totalScore = 0;
+      gameState.drawnPositions.forEach((position) => {
+        if (teamScores[player.visibleTeam][position]) {
+          totalScore += teamScores[player.visibleTeam][position];
+        }
+        if (teamScores[player.hiddenTeam][position]) {
+          totalScore += teamScores[player.hiddenTeam][position];
+        }
+      });
+      player.score = totalScore;
+    }
   });
 
   const remainingPlayers = players.filter((p) => p.inGame);
@@ -851,26 +873,45 @@ function revealWinner(winner) {
   const { players, pot } = gameState;
   const scoresText = players
     .map((p, index) => {
-      const activePlayers = gameState.drawnPositions
-        .map((position) => {
-          const playerName = activePlayersData[p.team][position];
-          const playerPoints = teamScores[p.team][position];
-          return `<span>${position}: ${playerName} (${playerPoints} pts)</span>`;
-        })
-        .join(", ");
+      const visibleTeamColor = teamColors[p.visibleTeam];
+      const hiddenTeamColor = teamColors[p.hiddenTeam];
       const grayClass = p.inGame ? "" : "light-gray-text";
-      return `<span class="${grayClass}">Player ${index + 1}: ${
-        p.score
-      } points, Chips: ${
-        p.chips
-      }, Active Football Players: ${activePlayers}</span>`;
+
+      const positionsText = gameState.drawnPositions
+        .map((position) => {
+          const visiblePlayerName = activePlayersData[p.visibleTeam][position];
+          const visiblePlayerPoints = teamScores[p.visibleTeam][position] || 0;
+          const hiddenPlayerName = activePlayersData[p.hiddenTeam][position];
+          const hiddenPlayerPoints = teamScores[p.hiddenTeam][position] || 0;
+
+          return `
+            ${position}:<br>
+            <span style="color: ${visibleTeamColor.primary}; -webkit-text-stroke: 0.5px ${visibleTeamColor.secondary};">
+              ${p.visibleTeam}: ${visiblePlayerName} (${visiblePlayerPoints} pts)
+            </span><br>
+            <span style="color: ${hiddenTeamColor.primary}; -webkit-text-stroke: 0.5px ${hiddenTeamColor.secondary};">
+              ${p.hiddenTeam}: ${hiddenPlayerName} (${hiddenPlayerPoints} pts)
+            </span>
+          `;
+        })
+        .join("<br>");
+
+      return `
+        <span class="${grayClass}">
+          Player ${index + 1}: ${p.score} points, Chips: ${p.chips}<br>
+          ${positionsText}
+        </span>
+      `;
     })
-    .join("<br>");
+    .join("<br><br>");
 
   const winnerIndex = players.indexOf(winner) + 1;
-  document.getElementById(
-    "final-score"
-  ).innerHTML = `Scores:<br>${scoresText}<br><br>Winner: <strong style="color: gold; font-size: 1.2em; font-family: 'Freshman'">Player ${winnerIndex}</strong> with ${winner.score} points! Pot: ${pot}`;
+  document.getElementById("final-score").innerHTML = `
+    Scores:<br>${scoresText}<br><br>
+    Winner: <strong style="color: gold; font-size: 1.2em; font-family: 'Freshman'">
+      Player ${winnerIndex}
+    </strong> with ${winner.score} points! Pot: ${pot}
+  `;
 }
 
 function copyInviteLink() {
