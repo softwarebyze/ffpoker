@@ -1,33 +1,33 @@
 Team,QB,QB Points,RB,RB Points,WR,WR Points,TE,TE Points,K,K Points,Defense,Defense Points
-Arizona Cardinals,Kyler Murray,22.2,James Conner,14.9,Marvin Harrison Jr.,23.1,Trey McBride,21.4,Chad Ryland,10.0,Arizona Cardinals Defense,3.0
-Atlanta Falcons,Kirk Cousins,28.6,Bijan Robinson,22.0,Darnell Mooney,20.2,Kyle Pitts,25.1,Younghoe Koo,7.0,Atlanta Falcons Defense,6.0
-Baltimore Ravens,Lamar Jackson,24.2,Derrick Henry,14.7,Zay Flowers,18.5,Mark Andrews,14.6,Justin Tucker,6.0,Baltimore Ravens Defense,3.0
-Buffalo Bills,Josh Allen,19.8,James Cook,28.3,Khalil Shakir,19.9,Dalton Kincaid,13.1,Tyler Bass,7.0,Buffalo Bills Defense,9.0
-Carolina Panthers,Bryce Young,13.6,Miles Sanders,11.5,Jalen Coker,17.8,Tommy Tremble,3.3,Eddy Piñeiro,2.0,Carolina Panthers Defense,5.0
-Chicago Bears,Caleb Williams,9.3,D'Andre Swift,18.9,Rome Odunze,8.4,Cole Kmet,4.4,Cairo Santos,1.0,Chicago Bears Defense,3.0
-Cincinnati Bengals,Joe Burrow,12.9,Chase Brown,11.4,Ja'Marr Chase,20.4,Mike Gesicki,12.3,Evan McPherson,5.0,Cincinnati Bengals Defense,-4.0
-Cleveland Browns,Jameis Winston,23.6,Nick Chubb,5.2,Cedric Tillman,28.9,David Njoku,17.1,Dustin Hopkins,11.0,Cleveland Browns Defense,3.0
-Dallas Cowboys,,-inf,,-inf,,-inf,,-inf,,-inf,,-inf
-Denver Broncos,Bo Nix,29.8,Jaleel McLaughlin,12.6,Courtland Sutton,17.1,Adam Trautman,18.5,Wil Lutz,4.0,Denver Broncos Defense,7.0
-Detroit Lions,Jared Goff,15.5,Jahmyr Gibbs,20.3,Kalif Raymond,9.4,Sam LaPorta,16.8,Jake Bates,12.0,Detroit Lions Defense,16.0
-Green Bay Packers,Malik Willis,8.5,Josh Jacobs,25.5,Romeo Doubs,10.2,Tucker Kraft,16.8,Brandon McManus,12.0,Green Bay Packers Defense,5.0
-Houston Texans,C.J. Stroud,12.4,Joe Mixon,23.4,Tank Dell,13.5,Dalton Schultz,9.2,Ka'imi Fairbairn,11.0,Houston Texans Defense,10.0
-Indianapolis Colts,Anthony Richardson,11.5,Jonathan Taylor,18.7,Josh Downs,22.2,Kylen Granson,1.4,Matt Gay,8.0,Indianapolis Colts Defense,4.0
-Jacksonville Jaguars,Trevor Lawrence,23.3,Tank Bigsby,10.6,Brian Thomas Jr.,15.0,Evan Engram,13.6,Cam Little,9.0,Jacksonville Jaguars Defense,2.0
-Kansas City Chiefs,Patrick Mahomes,18.2,Kareem Hunt,13.3,Xavier Worthy,13.7,Travis Kelce,25.0,Harrison Butker,9.0,Kansas City Chiefs Defense,8.0
-Las Vegas Raiders,Gardner Minshew II,15.0,Alexander Mattison,9.4,Jakobi Meyers,17.2,Brock Bowers,10.8,Daniel Carlson,10.0,Las Vegas Raiders Defense,3.0
-Los Angeles Chargers,Justin Herbert,24.1,J.K. Dobbins,16.8,Ladd McConkey,29.1,Will Dissly,9.1,Cameron Dicker,8.0,Los Angeles Chargers Defense,12.0
-Los Angeles Rams,Matthew Stafford,24.8,Kyren Williams,22.6,Puka Nacua,18.1,Colby Parkinson,3.7,Joshua Karty,4.0,Los Angeles Rams Defense,6.0
-Miami Dolphins,Tua Tagovailoa,14.7,De'Von Achane,26.7,Tyreek Hill,13.2,Jonnu Smith,6.0,Jason Sanders,11.0,Miami Dolphins Defense,0.0
-Minnesota Vikings,Sam Darnold,18.2,Aaron Jones,11.5,Justin Jefferson,19.5,Josh Oliver,11.0,Will Reichard,8.0,Minnesota Vikings Defense,1.0
-New England Patriots,Drake Maye,11.5,Rhamondre Stevenson,23.5,Kayshon Boutte,7.6,Hunter Henry,9.5,Joey Slye,5.0,New England Patriots Defense,1.0
-New Orleans Saints,Spencer Rattler,6.2,Alvin Kamara,18.2,Chris Olave,18.7,Juwan Johnson,7.8,Blake Grupe,6.0,New Orleans Saints Defense,5.0
-New York Giants,,-inf,,-inf,,-inf,,-inf,,-inf,,-inf
-New York Jets,Aaron Rodgers,17.3,Breece Hall,9.9,Garrett Wilson,16.3,Tyler Conklin,13.2,Greg Zuerlein,4.0,New York Jets Defense,2.0
-Philadelphia Eagles,Jalen Hurts,35.1,Saquon Barkley,12.1,DeVonta Smith,20.5,Grant Calcaterra,8.8,Jake Elliott,13.0,Philadelphia Eagles Defense,6.0
+Arizona Cardinals,Kyler Murray,4.8,Emari Demercado,16.0,Marvin Harrison Jr.,3.4,Trey McBride,12.7,Chad Ryland,11.0,Arizona Cardinals Defense,12.0
+Atlanta Falcons,Kirk Cousins,17.8,Bijan Robinson,21.5,Darnell Mooney,19.8,Kyle Pitts,2.1,Younghoe Koo,3.0,Atlanta Falcons Defense,3.0
+Baltimore Ravens,Lamar Jackson,23.6,Derrick Henry,26.3,Zay Flowers,29.7,Mark Andrews,4.6,Justin Tucker,11.0,Baltimore Ravens Defense,10.0
+Buffalo Bills,Josh Allen,22.1,Ray Davis,17.0,Mack Hollins,14.0,Quintin Morris,7.2,Tyler Bass,12.0,Buffalo Bills Defense,3.0
+Carolina Panthers,Bryce Young,9.7,Chuba Hubbard,21.2,Xavier Legette,13.9,Ja'Tavion Sanders,12.7,Eddy Piñeiro,5.0,Carolina Panthers Defense,1.0
+Chicago Bears,Caleb Williams,9.2,D'Andre Swift,14.2,Rome Odunze,15.4,Gerald Everett,1.5,Cairo Santos,13.0,Chicago Bears Defense,7.0
+Cincinnati Bengals,Joe Burrow,29.1,Chase Brown,26.7,Ja'Marr Chase,11.3,Mike Gesicki,27.0,Evan McPherson,11.0,Cincinnati Bengals Defense,10.0
+Cleveland Browns,Jameis Winston,10.1,Nick Chubb,4.5,Cedric Tillman,19.5,David Njoku,7.9,Dustin Hopkins,4.0,Cleveland Browns Defense,6.0
+Dallas Cowboys,Dak Prescott,12.3,Rico Dowdle,21.7,CeeDee Lamb,16.2,Jake Ferguson,14.1,Brandon Aubrey,9.0,Dallas Cowboys Defense,4.0
+Denver Broncos,Bo Nix,17.7,Javonte Williams,10.4,Courtland Sutton,23.3,Adam Trautman,1.4,Wil Lutz,4.0,Denver Broncos Defense,-3.0
+Detroit Lions,Jared Goff,9.6,Jahmyr Gibbs,14.6,Amon-Ra St. Brown,18.6,Sam LaPorta,4.8,Jake Bates,6.0,Detroit Lions Defense,9.0
+Green Bay Packers,Jordan Love,10.9,Josh Jacobs,12.8,Jayden Reed,16.3,Tucker Kraft,7.6,Brandon McManus,6.0,Green Bay Packers Defense,2.0
+Houston Texans,C.J. Stroud,11.5,Joe Mixon,16.6,Tank Dell,18.6,Dalton Schultz,5.1,Ka'imi Fairbairn,9.0,Houston Texans Defense,2.0
+Indianapolis Colts,,-inf,,-inf,,-inf,,-inf,,-inf,,-inf
+Jacksonville Jaguars,Trevor Lawrence,19.6,Travis Etienne Jr.,5.0,Parker Washington,7.1,Evan Engram,11.5,Cam Little,1.0,Jacksonville Jaguars Defense,10.0
+Kansas City Chiefs,,-inf,,-inf,,-inf,,-inf,,-inf,,-inf
+Las Vegas Raiders,Desmond Ridder,5.2,Zamir White,7.0,Jakobi Meyers,18.5,Brock Bowers,15.5,Daniel Carlson,6.0,Las Vegas Raiders Defense,5.0
+Los Angeles Chargers,Justin Herbert,19.5,J.K. Dobbins,24.5,Quentin Johnston,22.0,Will Dissly,2.9,Cameron Dicker,3.0,Los Angeles Chargers Defense,16.0
+Los Angeles Rams,Matthew Stafford,17.9,Kyren Williams,10.5,Demarcus Robinson,27.4,Davis Allen,1.5,Joshua Karty,8.0,Los Angeles Rams Defense,20.0
+Miami Dolphins,Tua Tagovailoa,17.5,De'Von Achane,32.1,Tyreek Hill,12.0,Jonnu Smith,9.6,Jason Sanders,9.0,Miami Dolphins Defense,2.0
+Minnesota Vikings,,-inf,,-inf,,-inf,,-inf,,-inf,,-inf
+New England Patriots,Drake Maye,15.7,Rhamondre Stevenson,22.4,DeMario Douglas,10.5,Hunter Henry,12.6,Joey Slye,7.0,New England Patriots Defense,4.0
+New Orleans Saints,Taysom Hill,16.0,Alvin Kamara,27.5,Cedrick Wilson Jr.,5.4,Foster Moreau,8.7,Blake Grupe,12.0,New Orleans Saints Defense,3.0
+New York Giants,Daniel Jones,24.4,Tyrone Tracy Jr.,7.9,Malik Nabers,14.9,Theo Johnson,14.1,Jude McAtamney,4.0,New York Giants Defense,0.0
+New York Jets,Aaron Rodgers,20.3,Breece Hall,10.5,Garrett Wilson,30.0,Kenny Yeboah,2.2,Riley Patterson,3.0,New York Jets Defense,14.0
+Philadelphia Eagles,Jalen Hurts,29.9,Saquon Barkley,32.9,DeVonta Smith,18.7,Grant Calcaterra,8.0,Jake Elliott,4.0,Philadelphia Eagles Defense,9.0
 Pittsburgh Steelers,,-inf,,-inf,,-inf,,-inf,,-inf,,-inf
-Seattle Seahawks,Geno Smith,8.1,Zach Charbonnet,11.4,Jaxon Smith-Njigba,12.9,AJ Barner,5.4,Jason Myers,4.0,Seattle Seahawks Defense,2.0
+Seattle Seahawks,Geno Smith,22.1,Kenneth Walker III,13.7,Jaxon Smith-Njigba,37.0,AJ Barner,6.7,Jason Myers,2.0,Seattle Seahawks Defense,3.0
 San Francisco 49ers,,-inf,,-inf,,-inf,,-inf,,-inf,,-inf
-Tampa Bay Buccaneers,Baker Mayfield,22.3,Rachaad White,15.7,Jalen McMillan,9.2,Cade Otton,29.1,Chase McLaughlin,8.0,Tampa Bay Buccaneers Defense,3.0
-Tennessee Titans,Mason Rudolph,19.5,Tony Pollard,14.7,Calvin Ridley,22.6,Josh Whyle,5.3,Nick Folk,2.0,Tennessee Titans Defense,0.0
-Washington Commanders,Jayden Daniels,22.2,Brian Robinson Jr.,8.6,Terry McLaurin,17.5,Zach Ertz,14.7,Austin Seibert,12.0,Washington Commanders Defense,5.0
+Tampa Bay Buccaneers,,-inf,,-inf,,-inf,,-inf,,-inf,,-inf
+Tennessee Titans,Mason Rudolph,17.5,Tony Pollard,18.4,Nick Westbrook-Ikhine,16.0,Nick Vannett,11.3,Nick Folk,8.0,Tennessee Titans Defense,11.0
+Washington Commanders,Jayden Daniels,19.9,Austin Ekeler,17.3,Terry McLaurin,15.9,Ben Sinnott,2.2,Austin Seibert,9.0,Washington Commanders Defense,4.0
