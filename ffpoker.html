@@ -1,214 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Fantasy Football Texas Hold'em</title>
-    <style>
-      @font-face {
-        font-family: 'Freshman';
-        src: url('Freshman.ttf') format('truetype');
-      }
 
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        background-color: #013220;
-        color: white;
-        margin: 20px;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <title>Fantasy Football Texas Hold'em</title>
+  <style>
+    @font-face {
+      font-family: 'Freshman';
+      src: url('Freshman.ttf') format('truetype');
+    }
 
-      h1, #team-info h2, #results h2 {
-        font-family: 'Freshman', Arial, sans-serif;
-        -webkit-text-stroke: 0.2px black; /* Even thinner black border */
-        letter-spacing: -1px; /* Reduce space between letters */
-      }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #013220;
+      color: white;
+      margin: 20px;
+    }
 
-      #teams-drawn li {
-        font-family: 'Freshman', Arial, sans-serif; /* Ensure team names use Freshman font */
-        margin-bottom: 15px; /* Increase vertical space between teams */
-        -webkit-text-stroke: 0.2px black; /* Thinner black border */
-      }
+    h1,
+    #position-info h2,
+    #results h2 {
+      font-family: 'Freshman', Arial, sans-serif;
+      -webkit-text-stroke: 0.2px black;
+      /* Even thinner black border */
+      letter-spacing: -1px;
+      /* Reduce space between letters */
+    }
 
-      .player-info strong {
-        font-family: 'Freshman', Arial, sans-serif;
-        -webkit-text-stroke: 0.2px black; /* Thinner black border */
-        font-size: 1.2em;
-        font-weight: bold;
-      }
+    #positions-drawn li {
+      font-family: 'Freshman', Arial, sans-serif;
+      /* Ensure team names use Freshman font */
+      margin-bottom: 15px;
+      /* Increase vertical space between teams */
+      -webkit-text-stroke: 0.2px black;
+      /* Thinner black border */
+    }
 
-      .tooltip .tooltiptext, #final-score span, #final-score {
-        font-family: 'Freshman', Arial, sans-serif;
-      }
+    .player-info strong {
+      font-family: 'Freshman', Arial, sans-serif;
+      -webkit-text-stroke: 0.2px black;
+      /* Thinner black border */
+      font-size: 1.2em;
+      font-weight: bold;
+    }
 
-      #final-score {
-        font-family: Arial, sans-serif;
-      }
+    .tooltip .tooltiptext,
+    #final-score span,
+    #final-score {
+      font-family: 'Freshman', Arial, sans-serif;
+    }
 
-      #final-score {
-        color: white;
-        -webkit-text-stroke: 0.2px black; /* Thinner black border for winner */
-      }
+    #final-score {
+      font-family: Arial, sans-serif;
+    }
 
-      h1 {
-        margin-bottom: 20px;
-      }
+    #final-score {
+      color: white;
+      -webkit-text-stroke: 0.2px black;
+      /* Thinner black border for winner */
+    }
 
-      .player-info,
-      .team-info {
-        margin: 10px;
-        padding: 10px;
-        border: 1px solid black;
-        display: inline-block;
-        width: 200px;
-        text-align: left;
-      }
+    h1 {
+      margin-bottom: 20px;
+    }
 
-      .player-info.active {
-        border: 2px dashed yellow;
-      }
+    .player-info,
+    .position-info {
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid black;
+      display: inline-block;
+      width: 200px;
+      text-align: left;
+    }
 
-      .action-buttons button {
-        margin: 5px;
-      }
+    .player-info.active {
+      border: 2px dashed yellow;
+    }
 
-      .light-gray-text {
-        color: #d3d3d3;
-      }
+    .action-buttons button {
+      margin: 5px;
+    }
 
-      #startGame {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-      }
+    .light-gray-text {
+      color: #d3d3d3;
+    }
 
-      #history {
-        position: absolute;
-        right: 20px;
-        margin-right: 10px;
-        border: solid;
-        
-      }
+    #startGame {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
 
-      #history-contents {
-        list-style-type: none;
-        margin: 0;
-        margin-left: 5px;
-        margin-right: 5px;
-        padding: 0;
-        text-align:left;
-      }
+    #history {
+      position: absolute;
+      right: 20px;
+      margin-right: 10px;
+      border: solid;
 
-      #pot-display {
-        font-size: 1.2em;
-        font-weight: bold;
-        margin-top: 10px;
-      }
+    }
 
-      #pot-display strong:first-child {
-        font-size: 0.8em;
-      }
+    #history-contents {
+      list-style-type: none;
+      margin: 0;
+      margin-left: 5px;
+      margin-right: 5px;
+      padding: 0;
+      text-align: left;
+    }
 
-      .tooltip {
-        position: relative;
-        display: inline-block;
-      }
+    #pot-display {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-top: 10px;
+    }
 
-      .tooltip .tooltiptext {
-        visibility: hidden;
-        width: 160px;
-        background-color: #555;
-        color: #fff;
-        text-align: center;
-        border-radius: 6px;
-        padding: 5px;
-        position: absolute;
-        z-index: 1;
-        bottom: 125%; /* Position the tooltip above the text */
-        left: 50%;
-        margin-left: -80px;
-        opacity: 0;
-        transition: opacity 0.3s;
-      }
+    #pot-display strong:first-child {
+      font-size: 0.8em;
+    }
 
-      .tooltip:hover .tooltiptext {
-        visibility: visible;
-        opacity: 1;
-      }
-    </style>
-  </head>
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
 
-  <body>
-    <h1>Fantasy Football Texas Hold'em</h1>
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 160px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      /* Position the tooltip above the text */
+      left: 50%;
+      margin-left: -80px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
 
-    <div id="timer"></div>
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
 
-    Player Id: <span id="player-id"></span><br/>
-    <span id="username-span">Username: <span id="username"></span><br/></span>
-    Player Number: <span id="player-number"></span><br/>
-    Game Id: <span id="game-id"></span><br/>
+<body>
+  <h1>Fantasy Football Texas Hold'em</h1>
 
-    <div id="players-section"></div>
+  <div id="timer"></div>
 
-    <div id="team-info" class="team-info">
-      <h2>Teams Drawn</h2>
-      <ul id="teams-drawn" style="list-style: none"></ul>
+  Player Id: <span id="player-id"></span><br />
+  <span id="username-span">Username: <span id="username"></span><br /></span>
+  Player Number: <span id="player-number"></span><br />
+  Game Id: <span id="game-id"></span><br />
+
+  <div id="players-section"></div>
+
+  <div id="position-info" class="position-info">
+    <h2>Positions Drawn</h2>
+    <ul id="positions-drawn" style="list-style: none"></ul>
+  </div>
+
+  <div id="pot-display"></div>
+
+  <div id="player-actions" class="action-buttons"></div>
+
+  <div class="raise" id="raiseDiv">
+    <p>Raise amount:</p>
+    <div>
+      <span id="minLabel">1</span>
+      <input type="range" min="1" max="100" value="11" class="slider" id="raiseRange" oninput="updateRaiseAmount()" />
+      <span id="maxLabel">100</span>
     </div>
+    <p>Raise: <span id="raiseAmount">11</span></p>
+    <button id="submit-raise" onclick="playerRaise()">Submit Raise</button>
+  </div>
 
-    <div id="pot-display"></div>
+  <div id="results">
+    <h2>Results</h2>
+    <p id="waiting-results" style="display: none;">Waiting for results, results should be out at <span
+        id="next-monday"></span>
+      <button onclick="checkTime()">Click to check time</button>
+    </p>
+    <p id="final-score"></p>
+  </div>
 
-    <div id="player-actions" class="action-buttons"></div>
+  <div id="game-log"></div>
 
-    <div class="raise" id="raiseDiv">
-      <p>Raise amount:</p>
-      <div>
-        <span id="minLabel">1</span>
-        <input
-          type="range"
-          min="1"
-          max="100"
-          value="11"
-          class="slider"
-          id="raiseRange"
-          oninput="updateRaiseAmount()"
-        />
-        <span id="maxLabel">100</span>
+  <button id="startGame" onclick="startGame()">New Game</button>
+
+  <table>
+    <tr>
+      <button id="joinGame" onclick="joinGame()">Join Game</button>
+      <button id="resetGame" onclick="resetGame()">Reset Game</button>
+      <button id="starter" onclick="startGame()">Start Game</button>
+
+    </tr>
+    <tr>
+      <div id="history" style="display: none;">
+        <h3>History</h3>
+        <ul id="history-contents"></ul>
       </div>
-      <p>Raise: <span id="raiseAmount">11</span></p>
-      <button id="submit-raise" onclick="playerRaise()">Submit Raise</button>
-    </div>
+    </tr>
+  </table>
+  <div id="invite-link-div">
+    Game invite link: <a id="invite-link-clickable" style="color:#fff"></a><br />
+    <button id="copy-invite-link" onclick="copyInviteLink()">Copy Invite Link</button>
+  </div>
 
-    <div id="results">
-      <h2>Results</h2>
-      <p id="waiting-results" style="display: none;">Waiting for results, results should be out at <span id="next-monday"></span>
-        <button onclick="checkTime()">Click to check time</button>
-      </p>
-      <p id="final-score"></p>
-    </div>
 
-    <div id="game-log"></div>
+  <script type="module" src="index.js"></script>
+</body>
 
-    <button id="startGame" onclick="startGame()">New Game</button>
-
-    <table>
-      <tr>
-        <button id="joinGame" onclick="joinGame()">Join Game</button>
-        <button id="resetGame" onclick="resetGame()">Reset Game</button>
-        <button id="starter" onclick="startGame()">Start Game</button>
-
-      </tr>
-      <tr>
-        <div id="history" style="display: none;">
-          <h3>History</h3>
-          <ul id="history-contents"></ul>
-        </div>
-      </tr>
-    </table>
-    <div id="invite-link-div">
-      Game invite link: <a id="invite-link-clickable" style="color:#fff"></a><br/>
-      <button id="copy-invite-link" onclick="copyInviteLink()">Copy Invite Link</button>
-    </div>
-    
-
-    <script type="module" src="index.js"></script>
-  </body>
 </html>
