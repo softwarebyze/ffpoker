@@ -1,52 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Fantasy Football Texas Hold'em</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        margin: 50px;
-      }
 
-      .player-info,
-      .team-info {
-        margin: 20px;
-        padding: 10px;
-        border: 1px solid black;
-        display: inline-block;
-        width: 200px;
-        text-align: left;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <title>Fantasy Football Texas Hold'em</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 50px;
+    }
 
-      .action-buttons button {
-        margin: 5px;
-      }
-    </style>
-  </head>
+    .player-info,
+    .team-info {
+      margin: 20px;
+      padding: 10px;
+      border: 1px solid black;
+      display: inline-block;
+      width: 200px;
+      text-align: left;
+    }
 
-  <body>
-    <h1>Fantasy Football Texas Hold'em</h1>
+    .action-buttons button {
+      margin: 5px;
+    }
+  </style>
+</head>
 
-    <div id="create-username">
-      Enter your username:
-      <input id="user-text" type="text" placeholder="Example: suzy" />
-      <br />
-      <div>
-        <button onclick="addUsername()">Submit username</button>
-      </div>
-      <span id="error-text"></span>
+<body>
+  <h1>Fantasy Football Texas Hold'em</h1>
+
+  <div id="create-username">
+    Enter your username:
+    <input id="user-text" type="text" placeholder="Example: suzy" />
+    <br />
+    <div>
+      <button onclick="addUsername()">Submit username</button>
     </div>
-    <div id="join-create-game" style="display: none">
-      <div>
-        Username: <span id="username"></span><br />
-        <button onclick="joinOrCreateRandomGame()">Play Random Game</button
-        ><br />
-        <button onclick="createPrivateGame()">Create Private Game</button>
-      </div>
+    <span id="error-text"></span>
+  </div>
+  <div id="join-create-game" style="display: none">
+    <div>
+      Username: <span id="username"></span><br />
+      <button onclick="joinOrCreateRandomGame()">Play Random Game</button><br />
+      <button onclick="createPrivateGame()">Create Private Game</button>
     </div>
+  </div>
 
-    <script type="module" src="lobby.js"></script>
-  </body>
+  <script type="module" src="lobby.js"></script>
+</body>
+
 </html>
