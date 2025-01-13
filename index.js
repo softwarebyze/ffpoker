@@ -43,54 +43,61 @@ let teams = []; // Declare teams array globally, fill it from json of teams that
 
 // Function to get the current NFL week
 function getNFLWeek() {
-    const seasonStart = new Date(Date.UTC(2024, 8, 8, 5, 0, 0)); // September 8, 2024, at 10 PM Pacific (converted to UTC)
-    const now = new Date();
+  const seasonStart = new Date(Date.UTC(2024, 8, 8, 5, 0, 0)); // September 8, 2024, at 10 PM Pacific (converted to UTC)
+  const now = new Date();
 
-    // Calculate the difference in time (milliseconds)
-    let diff = now - seasonStart;
+  // Calculate the difference in time (milliseconds)
+  let diff = now - seasonStart;
 
-    // Convert milliseconds to weeks (1 week = 7 days = 7 * 24 * 60 * 60 * 1000 ms)
-    const msInWeek = 7 * 24 * 60 * 60 * 1000;
+  // Convert milliseconds to weeks (1 week = 7 days = 7 * 24 * 60 * 60 * 1000 ms)
+  const msInWeek = 7 * 24 * 60 * 60 * 1000;
 
-    // Get the week number by dividing the time difference by msInWeek
-    let week = Math.floor(diff / msInWeek) + 2;
+  // Get the week number by dividing the time difference by msInWeek
+  let week = Math.floor(diff / msInWeek) + 2;
 
-    // If it's Sunday after 10 PM Pacific, move to the next week
-    if (now.getUTCDay() === 0 && now.getUTCHours() >= 5) {
-        week += 1;
-    }
-    // Ensure we don't go out of bounds
-    if (week > 18) {
-        week = 18;
-    } else if (week < 1) {
-        week = 1;
-    }
-    return week;
+  // If it's Sunday after 10 PM Pacific, move to the next week
+  if (now.getUTCDay() === 0 && now.getUTCHours() >= 5) {
+    week += 1;
+  }
+  // Ensure we don't go out of bounds
+  if (week > 18) {
+    week = 18;
+  } else if (week < 1) {
+    week = 1;
+  }
+  return week;
 }
 
 // Function to load the corresponding teams based on the current NFL week
 async function loadTeams() {
-    const week = getNFLWeek();
+  const week = getNFLWeek();
 
-    // Fetch json
-    const response = await fetch("sundays_nfl_schedule_2024.json");
+  // Fetch json
+  const response = await fetch("sundays_nfl_schedule_2024.json");
 
-    // Check if the response is ok
-    if (!response.ok) {
-        // Return a default set of teams if fetching fails
-        return ["Detroit Lions", "Dallas Cowboys", "Denver Broncos", "Philadelphia Eagles", "New York Giants", "Washington Commanders"];
-    }
+  // Check if the response is ok
+  if (!response.ok) {
+    // Return a default set of teams if fetching fails
+    return [
+      "Detroit Lions",
+      "Dallas Cowboys",
+      "Denver Broncos",
+      "Philadelphia Eagles",
+      "New York Giants",
+      "Washington Commanders",
+    ];
+  }
 
-    const schedule = await response.json();
+  const schedule = await response.json();
 
-    // Get the teams for the current week
-    const teams = schedule[`Week ${week}`];
-    return teams;
+  // Get the teams for the current week
+  const teams = schedule[`Week ${week}`];
+  return teams;
 }
 
 async function initializeTeams() {
-    teams = await loadTeams();
-    console.log("Teams array populated:", teams);
+  teams = await loadTeams();
+  console.log("Teams array populated:", teams);
 }
 
 // Call the initialization function
@@ -217,7 +224,8 @@ async function loadInitialGameState() {
         // {
         //     "inGame": true,
         //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
-        //     "position": "WR",
+        //     "visibleTeam": "Dallas Cowboys",
+        //     "hiddenTeam": "New York Jets",
         //     "bet": 10,
         //     "score": 0,
         //     "chips": 50
@@ -226,7 +234,7 @@ async function loadInitialGameState() {
       bettingPhase: 1,
       initialBet: 10,
       currentBet: 10,
-      drawnTeams: [],
+      drawnPositions: [],
       // history: [
       //   {}
       // ]
@@ -245,11 +253,10 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
-
 });
 
 async function resetGame() {
-  const oldNumPlayers = gameState.players.length
+  const oldNumPlayers = gameState.players.length;
   deleteGame(gameId);
   await loadTeamData();
   await loadInitialGameState();
@@ -288,17 +295,19 @@ async function loadTeamData() {
 }
 
 async function joinGame() {
-  const availablePositions = [...positions];
+  const availableTeams = [...teams];
 
-  for (let player of gameState.players) {
-    const playerPosition = player["position"];
-    const playerPositionIndex = availablePositions.indexOf(playerPosition);
-    availablePositions.splice(playerPositionIndex, 1);
-  }
+  // Assign visibleTeam
+  const teamIndex = Math.floor(Math.random() * availableTeams.length);
+  const visibleTeam = availableTeams.splice(teamIndex, 1)[0];
 
-  const positionIndex = Math.floor(Math.random() * availablePositions.length);
-  const position = availablePositions.splice(positionIndex, 1)[0];
+  // Assign hiddenTeam
+  const hiddenTeamIndex = Math.floor(Math.random() * availableTeams.length);
+  const hiddenTeam = availableTeams.splice(hiddenTeamIndex, 1)[0];
 
+  const team = availableTeams.splice(teamIndex, 1)[0];
+
+  // Check if the player is already in the game
   for (let player of gameState.players) {
     if (player.id == playerId) return;
   }
@@ -307,7 +316,8 @@ async function joinGame() {
     players: arrayUnion({
       id: playerId,
       username: auth.currentUser.displayName,
-      position,
+      visibleTeam,
+      hiddenTeam,
       score: 0,
       inGame: true,
       bet: gameState.initialBet,
@@ -321,8 +331,8 @@ async function joinGame() {
   document.getElementById("player-number").innerHTML = newPlayerIndex;
 
   //if (gameState.players.length == numPlayers) {
-    // When the final person joins, automatically start the game
-    //await startGame();
+  // When the final person joins, automatically start the game
+  //await startGame();
   //}
 }
 
@@ -343,8 +353,8 @@ function startGame() {
 
   gameState.status = "active";
   gameState.players = updatedPlayers;
-  numPlayers = gameState.players.length
-  gameState.drawnTeams = [];
+  numPlayers = gameState.players.length;
+  gameState.drawnPositions = [];
   gameState.currentPlayer = 0;
   gameState.pot = numPlayers * 10;
   gameState.currentBet = gameState.initialBet;
@@ -355,7 +365,7 @@ function startGame() {
   gameState.startedAt = new Date();
   gameState.endedAt = null; // Considering how to handle it
 
-  document.getElementById("teams-drawn").innerHTML = "";
+  document.getElementById("positions-drawn").innerHTML = "";
   document.getElementById("final-score").innerHTML = "";
   document.getElementById("history").style.display = "";
 
@@ -367,7 +377,7 @@ function startGame() {
   updateDoc(gameRef, {
     players: gameState.players,
     pot: gameState.pot,
-    drawnTeams: gameState.drawnTeams,
+    drawnPositions: gameState.drawnPositions,
     currentPlayer: gameState.currentPlayer,
     currentBet: gameState.currentBet,
     activePlayers: gameState.activePlayers,
@@ -391,14 +401,21 @@ function updatePlayerInfo() {
       player.id === gameState.players[gameState.currentPlayer].id;
     const status = player.inGame ? "" : "Folded";
     const grayClass = player.inGame ? "" : "light-gray-text";
-    const activatedPlayers = getActivatedPlayers(player.position);
+    const activatedPlayers = getActivatedPlayers(player.visibleTeam);
+    let hiddenTeamHTML = "";
+
+    if (player.id === playerId) {
+      hiddenTeamHTML = `<li><strong>Hidden Team: ${player.hiddenTeam}</strong></li>`;
+    }
+
     playersSection.innerHTML += `
       <div class="player-info ${grayClass} ${isActive ? "active" : ""}">
         <strong>${player.username}${status ? ` (${status})` : ""}</strong>
         <ul>
-          <li class="tooltip"><strong>${player.position}</strong>
+          <li class="tooltip"><strong>${player.visibleTeam}</strong>
             <span class="tooltiptext">${activatedPlayers}</span>
           </li>
+          ${hiddenTeamHTML}
           <li>Bet: ${player.bet}</li>
           <li>Chips: ${player.chips}</li>
         </ul>
@@ -409,11 +426,12 @@ function updatePlayerInfo() {
   updateTooltips();
 }
 
-function getActivatedPlayers(position) {
-  return gameState.drawnTeams
-    .map((team) => {
-      const teamColor = teamColors[team];
-      return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${activePlayersData[team][position]}</span>`;
+function getActivatedPlayers(team) {
+  return gameState.drawnPositions
+    .map((position) => {
+      const playerName = activePlayersData[team][position];
+      const playerPoints = teamScores[team][position];
+      return `<span>${position}: ${playerName} (${playerPoints} pts)</span>`;
     })
     .join(", ");
 }
@@ -659,9 +677,11 @@ function playerFold() {
 function nextPlayer() {
   const { players } = gameState;
 
-  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
+  let updatedCurrentPlayer =
+    (gameState.currentPlayer + 1) % gameState.players.length;
   while (!players[updatedCurrentPlayer].inGame) {
-    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % gameState.players.length;
+    updatedCurrentPlayer =
+      (updatedCurrentPlayer + 1) % gameState.players.length;
   }
 
   updateDoc(gameRef, {
@@ -689,25 +709,25 @@ function resetPlayer() {
   }
 }
 
-function drawTeam() {
-  const availableTeams = teams.filter(
-    (team) => !gameState.drawnTeams.includes(team)
+function drawPosition() {
+  const availablePositions = positions.filter(
+    (position) => !gameState.drawnPositions.includes(position)
   );
-  const team =
-    availableTeams[Math.floor(Math.random() * availableTeams.length)];
-  const updatedDrawnTeams = [...gameState.drawnTeams];
-  updatedDrawnTeams.push(team);
+  const position =
+    availablePositions[Math.floor(Math.random() * availablePositions.length)];
+  const updatedDrawnPositions = [...gameState.drawnPositions];
+  updatedDrawnPositions.push(position);
   const updatedActions = updateFoldedPlayerActions(
     gameState.actions.fill(false)
   );
-  if (updatedDrawnTeams.length < 2) {
+  if (updatedDrawnPositions.length < 2) {
     updateDoc(gameRef, {
       actions: updatedActions,
-      drawnTeams: updatedDrawnTeams,
+      drawnPositions: updatedDrawnPositions,
       history: arrayUnion({
-        action: "drawTeam",
-        drawnTeam: team,
-        numTeamDrawn: updatedDrawnTeams.length,
+        action: "drawPosition",
+        drawnPosition: position,
+        numPositionDrawn: updatedDrawnPositions.length,
       }),
     });
     updatePlayerActions();
@@ -715,12 +735,12 @@ function drawTeam() {
     const updatedBettingPhase = gameState.bettingPhase + 1;
     updateDoc(gameRef, {
       actions: updatedActions,
-      drawnTeams: updatedDrawnTeams,
+      drawnPositions: updatedDrawnPositions,
       bettingPhase: updatedBettingPhase,
       history: arrayUnion({
-        action: "drawTeam",
-        drawnTeam: team,
-        numTeamDrawn: updatedDrawnTeams.length,
+        action: "drawPosition",
+        drawnPosition: position,
+        numPositionDrawn: updatedDrawnPositions.length,
       }),
     });
     updatePlayerActions();
@@ -729,13 +749,13 @@ function drawTeam() {
     const endedAt = new Date();
     updateDoc(gameRef, {
       actions: updatedActions,
-      drawnTeams: updatedDrawnTeams,
+      drawnPositions: updatedDrawnPositions,
       status: updatedStatus,
       endedAt,
       history: arrayUnion({
-        action: "drawTeam",
-        drawnTeam: team,
-        numTeamDrawn: updatedDrawnTeams.length,
+        action: "drawPosition",
+        drawnPosition: position,
+        numPositionDrawn: updatedDrawnPositions.length,
       }),
     });
     revealScores();
@@ -754,7 +774,7 @@ function updateFoldedPlayerActions(actions) {
 }
 
 function goToNextPhaseOrGameEnd() {
-  if (gameState.bettingPhase === 3 || gameState.drawnTeams.length === 2) {
+  if (gameState.bettingPhase === 3 || gameState.drawnPositions.length === 2) {
     const updatedStatus = "awaitingResults";
     const endedAt = new Date();
     updateDoc(gameRef, {
@@ -767,7 +787,7 @@ function goToNextPhaseOrGameEnd() {
     updateDoc(gameRef, {
       bettingPhase: updatedBettingPhase,
     });
-    drawTeam();
+    drawPosition();
     resetPlayer();
   }
 }
@@ -823,11 +843,19 @@ function revealScores() {
   }
 
   players.forEach((player) => {
-    gameState.drawnTeams.forEach((team) => {
-      if (teamScores[team][player.position] && player.inGame) {
-        player.score += teamScores[team][player.position];
-      }
-    });
+    if (player.inGame) {
+      // score = (player at team 1 / position 1) + (player at team 2 / position 2)
+      let totalScore = 0;
+      gameState.drawnPositions.forEach((position) => {
+        if (teamScores[player.visibleTeam][position]) {
+          totalScore += teamScores[player.visibleTeam][position];
+        }
+        if (teamScores[player.hiddenTeam][position]) {
+          totalScore += teamScores[player.hiddenTeam][position];
+        }
+      });
+      player.score = totalScore;
+    }
   });
 
   const remainingPlayers = players.filter((p) => p.inGame);
@@ -845,27 +873,45 @@ function revealWinner(winner) {
   const { players, pot } = gameState;
   const scoresText = players
     .map((p, index) => {
-      const activePlayers = gameState.drawnTeams
-        .map((team) => {
-          const playerName = activePlayersData[team][p.position];
-          const playerPoints = teamScores[team][p.position];
-          const teamColor = teamColors[team];
-          return `<span style="color: ${teamColor.primary}; -webkit-text-stroke: 0.5px ${teamColor.secondary};">${playerName} (${playerPoints} pts)</span>`;
-        })
-        .join(", ");
+      const visibleTeamColor = teamColors[p.visibleTeam];
+      const hiddenTeamColor = teamColors[p.hiddenTeam];
       const grayClass = p.inGame ? "" : "light-gray-text";
-      return `<span class="${grayClass}">Player ${index + 1}: ${
-        p.score
-      } points, Chips: ${
-        p.chips
-      }, Active Football Players: ${activePlayers}</span>`;
+
+      const positionsText = gameState.drawnPositions
+        .map((position) => {
+          const visiblePlayerName = activePlayersData[p.visibleTeam][position];
+          const visiblePlayerPoints = teamScores[p.visibleTeam][position] || 0;
+          const hiddenPlayerName = activePlayersData[p.hiddenTeam][position];
+          const hiddenPlayerPoints = teamScores[p.hiddenTeam][position] || 0;
+
+          return `
+            ${position}:<br>
+            <span style="color: ${visibleTeamColor.primary}; -webkit-text-stroke: 0.5px ${visibleTeamColor.secondary};">
+              ${p.visibleTeam}: ${visiblePlayerName} (${visiblePlayerPoints} pts)
+            </span><br>
+            <span style="color: ${hiddenTeamColor.primary}; -webkit-text-stroke: 0.5px ${hiddenTeamColor.secondary};">
+              ${p.hiddenTeam}: ${hiddenPlayerName} (${hiddenPlayerPoints} pts)
+            </span>
+          `;
+        })
+        .join("<br>");
+
+      return `
+        <span class="${grayClass}">
+          Player ${index + 1}: ${p.score} points, Chips: ${p.chips}<br>
+          ${positionsText}
+        </span>
+      `;
     })
-    .join("<br>");
+    .join("<br><br>");
 
   const winnerIndex = players.indexOf(winner) + 1;
-  document.getElementById(
-    "final-score"
-  ).innerHTML = `Scores:<br>${scoresText}<br><br>Winner: <strong style="color: gold; font-size: 1.2em; font-family: 'Freshman'">Player ${winnerIndex}</strong> with ${winner.score} points! Pot: ${pot}`;
+  document.getElementById("final-score").innerHTML = `
+    Scores:<br>${scoresText}<br><br>
+    Winner: <strong style="color: gold; font-size: 1.2em; font-family: 'Freshman'">
+      Player ${winnerIndex}
+    </strong> with ${winner.score} points! Pot: ${pot}
+  `;
 }
 
 function copyInviteLink() {
@@ -898,7 +944,7 @@ function logGameState() {
   console.log(`Current Bet: ${gameState.currentBet}`);
   console.log(`Pot: ${gameState.pot}`);
   console.log(`Betting Phase: ${gameState.bettingPhase}`);
-  console.log(`Drawn Teams: ${gameState.drawnTeams.join(", ")}`);
+  console.log(`Drawn Positions: ${gameState.drawnPositions.join(", ")}`);
   console.log(
     `Player Actions: ${gameState.actions
       .map((action, index) => `Player ${index + 1}: ${action}`)
@@ -910,12 +956,13 @@ function updateUI() {
   if (gameState == undefined) {
     return;
   }
-  const { drawnTeams, status } = gameState;
+  const { drawnPositions, status } = gameState;
 
-  const numDrawnTeamsDisplayed =
-    document.getElementById("teams-drawn").innerHTML.split("<li").length - 1;
-  if (numDrawnTeamsDisplayed != drawnTeams.length) {
-    updateTeamUI();
+  const numDrawnPositionsDisplayed =
+    document.getElementById("positions-drawn").innerHTML.split("<li").length -
+    1;
+  if (numDrawnPositionsDisplayed != drawnPositions.length) {
+    updatePositionUI();
   }
 
   if (status === "active") {
@@ -1007,8 +1054,8 @@ function updateHistoryUI() {
           historyElement.innerHTML += "s";
         }
         break;
-      case "drawTeam":
-        historyElement.innerHTML = `${event["drawnTeam"]} was drawn`;
+      case "drawPosition":
+        historyElement.innerHTML = `${event["drawnPosition"]} was drawn`;
         break;
       default:
         historyElement.innerHTML = `${event.toString()}`;
@@ -1017,19 +1064,15 @@ function updateHistoryUI() {
   }
 }
 
-function updateTeamUI() {
-  document.getElementById("teams-drawn").innerHTML = "";
-  for (const team of gameState.drawnTeams) {
-    const teamColor = teamColors[team];
-    const teamLogo = teamLogos[team];
-    const teamElement = document.createElement("li");
-    teamElement.innerHTML = `${team} <img src="${teamLogo}" alt="${team} logo" style="width: 20px; vertical-align: middle; margin-left: 5px;">`;
-    teamElement.style.listStyle = "none";
-    teamElement.style.color = teamColor.primary;
-    teamElement.style.webkitTextStroke = `0.5px ${teamColor.secondary}`;
-    teamElement.style.fontWeight = "bold";
+function updatePositionUI() {
+  document.getElementById("positions-drawn").innerHTML = "";
+  for (const position of gameState.drawnPositions) {
+    const positionElement = document.createElement("li");
+    positionElement.innerHTML = position;
+    positionElement.style.listStyle = "none";
+    positionElement.style.fontWeight = "bold";
 
-    document.getElementById("teams-drawn").appendChild(teamElement);
+    document.getElementById("positions-drawn").appendChild(positionElement);
   }
 }
 
@@ -1065,7 +1108,7 @@ function updateTimer() {
 }
 
 function hideGame() {
-  document.getElementById("team-info").style.display = "none";
+  document.getElementById("position-info").style.display = "none";
   document.getElementById("results").style.display = "none";
   document.getElementById("raiseDiv").style.display = "none";
   document.getElementById("players-section").style.display = "none";
@@ -1074,7 +1117,7 @@ function hideGame() {
 }
 
 function showGame() {
-  document.getElementById("team-info").style.display = "";
+  document.getElementById("position-info").style.display = "";
   document.getElementById("players-section").style.display = "";
   if (!["awaitingStart", "resultsShown"].includes(gameState.status)) {
     document.getElementById("startGame").style.display = "none";
