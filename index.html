@@ -168,6 +168,37 @@
         font-family: 'Freshman', Arial, sans-serif;
         -webkit-text-stroke: 0.2px black;
       }
+
+      .auth-options {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .auth-form {
+        display: none;
+        margin-top: 15px;
+      }
+
+      .auth-form input {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .auth-form .btn {
+        width: 100%;
+      }
+
+      .link-button {
+        background: none;
+        border: none;
+        color: #4CAF50;
+        text-decoration: underline;
+        cursor: pointer;
+        padding: 0;
+        font: inherit;
+      }
     </style>
   </head>
 
@@ -182,6 +213,28 @@
         <input type="text" id="user-text" class="input-field" placeholder="Enter username">
         <p id="error-text" class="error-text"></p>
         <button class="btn" onclick="lobbyManager.addUsername()">Set Username</button>
+        
+        <div class="auth-options">
+          <button class="link-button" onclick="lobbyManager.showSignupForm()">Sign Up</button>
+          <span>|</span>
+          <button class="link-button" onclick="lobbyManager.showLoginForm()">Login</button>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div id="signup-form" class="auth-form">
+          <input type="email" id="signup-email" class="input-field" placeholder="Email">
+          <input type="password" id="signup-password" class="input-field" placeholder="Password">
+          <button class="btn" onclick="lobbyManager.signUp()">Sign Up</button>
+          <p id="signup-error" class="error-text"></p>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="auth-form">
+          <input type="email" id="login-email" class="input-field" placeholder="Email">
+          <input type="password" id="login-password" class="input-field" placeholder="Password">
+          <button class="btn" onclick="lobbyManager.login()">Login</button>
+          <p id="login-error" class="error-text"></p>
+        </div>
       </div>
 
       <!-- Game Options -->
@@ -190,6 +243,11 @@
         <div class="btn-group">
           <button class="btn" onclick="lobbyManager.joinOrCreateRandomGame()">Quick Join</button>
           <button class="btn" onclick="lobbyManager.createPrivateGame()">Create Private Game</button>
+        </div>
+        <div class="auth-options" style="margin-top: 20px;">
+          <button class="link-button" onclick="lobbyManager.logout()">Log Out</button>
+          <span>|</span>
+          <button class="link-button" style="color: #ff6b6b;" onclick="lobbyManager.deleteAccount()">Delete Account</button>
         </div>
       </div>
 

@@ -7,11 +7,21 @@ import {
   onSnapshot,
   query,
   where,
+  deleteDoc,
+  doc,
+  updateDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   updateProfile,
   getAuth,
   signInAnonymously,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  linkWithCredential,
+  EmailAuthProvider,
+  browserSessionPersistence,
+  setPersistence,
+  onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // Your web app's Firebase configuration
@@ -29,6 +39,52 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Enable session persistence
+setPersistence(auth, browserSessionPersistence);
+
+// Initialize anonymous auth
+signInAnonymously(auth).catch(error => {
+  console.error("Error signing in anonymously:", error);
+});
+
+// Handle auth state changes
+onAuthStateChanged(auth, handleAuthStateChange);
+
+function handleAuthStateChange(user) {
+  if (!user) {
+    redirectToUsername();
+    return;
+  }
+
+  if (!user.displayName) {
+    showUsernameCreation();
+    return;
+  }
+
+  showAuthenticatedUI(user);
+}
+
+function redirectToUsername() {
+  location.replace(`${window.location.origin}/username${window.location.search}`);
+}
+
+function showUsernameCreation() {
+  document.getElementById("create-username").style.display = "";
+  document.getElementById("join-create-game").style.display = "none";
+}
+
+function showAuthenticatedUI(user) {
+  const userTextEl = document.getElementById("user-text");
+  const createUsernameEl = document.getElementById("create-username");
+  const joinCreateGameEl = document.getElementById("join-create-game");
+  const usernameEl = document.getElementById("username");
+
+  userTextEl.value = user.displayName;
+  createUsernameEl.style.display = "none";
+  joinCreateGameEl.style.display = "";
+  usernameEl.innerHTML = user.displayName;
+}
+
 class LobbyManager {
   constructor() {
     this.gamesCollection = collection(db, "games");
@@ -37,17 +93,16 @@ class LobbyManager {
   }
 
   async init() {
-    if (!auth.currentUser) {
-      await signInAnonymously(auth);
-    }
-
     this.setupUI();
     this.setupListeners();
-    this.loadActiveGames();
+    await this.loadActiveGames();
   }
 
   setupUI() {
-    // Add modern styles
+    this.addStyles();
+  }
+
+  addStyles() {
     const style = document.createElement('style');
     style.textContent = `
       .lobby-container {
@@ -94,21 +149,12 @@ class LobbyManager {
       }
     `;
     document.head.appendChild(style);
-
-    // Update UI based on auth state
-    if (auth.currentUser?.displayName) {
-      document.getElementById("user-text").value = auth.currentUser.displayName;
-      document.getElementById("create-username").style.display = "none";
-      document.getElementById("join-create-game").style.display = "";
-      document.getElementById("username").innerHTML = auth.currentUser.displayName;
-    }
   }
 
   setupListeners() {
-    // Real-time updates for active games - show all non-completed games
     const activeGamesQuery = query(
       this.gamesCollection,
-      where("status", "in", ["waiting", "in_progress", "active"])
+      where("status", "in", ["awaitingPlayers", "awaitingStart", "active", "awaitingResults", "resultsShown"])
     );
 
     onSnapshot(activeGamesQuery, (snapshot) => {
@@ -126,9 +172,8 @@ class LobbyManager {
     snapshot.forEach((doc) => {
       const gameData = doc.data();
       const isInGame = gameData.players?.some(p => p.id === auth.currentUser?.uid);
-      
-      // Check if it's your turn by matching your ID with the player at currentPlayer index
       const isYourTurn = isInGame && 
+        gameData.status === "active" &&
         gameData.players?.[gameData.currentPlayer]?.id === auth.currentUser?.uid;
       
       games.push({
@@ -197,13 +242,8 @@ class LobbyManager {
       
       gameElement.className = `game-item${isInGame ? ' your-game' : ''}${isYourTurn ? ' your-turn' : ''}`;
       
-      const statusText = isYourTurn ? "Your Turn!" : 
-                        isInGame ? "In Progress" : 
-                        playerCount >= this.numPlayers ? "Full" : "Open";
-      
-      const statusClass = isYourTurn ? "waiting" : 
-                         isInGame ? "active" : 
-                         playerCount >= this.numPlayers ? "" : "active";
+      const statusText = this.getGameStatusText(data.status, isYourTurn, isInGame, playerCount);
+      const statusClass = this.getGameStatusClass(data.status, isYourTurn);
 
       gameElement.innerHTML = `
         <div>
@@ -214,35 +254,10 @@ class LobbyManager {
             <span>${statusText}</span>
           </div>
         </div>
-        ${isInGame ? 
-          `<button class="btn" onclick="lobbyManager.joinGame('${id}')">
-            ${isYourTurn ? 'Take Turn' : 'View Game'}
-           </button>` :
-          playerCount < this.numPlayers ?
-          `<button class="btn" onclick="lobbyManager.joinGame('${id}')">
-            Join Game
-           </button>` :
-          ''
-        }
+        ${this.getGameActionButton(data, id, isInGame, isYourTurn, playerCount)}
       `;
 
-      // Add to appropriate section
-      if (isYourTurn) {
-        if (!sections.yourTurn.querySelector('.section-header')) {
-          sections.yourTurn.innerHTML = '<h3 class="section-header">🎲 Your Turn</h3>';
-        }
-        sections.yourTurn.appendChild(gameElement);
-      } else if (isInGame) {
-        if (!sections.yourGames.querySelector('.section-header')) {
-          sections.yourGames.innerHTML = '<h3 class="section-header">🎮 Your Games</h3>';
-        }
-        sections.yourGames.appendChild(gameElement);
-      } else if (playerCount < this.numPlayers) {
-        if (!sections.openGames.querySelector('.section-header')) {
-          sections.openGames.innerHTML = '<h3 class="section-header">🎯 Open Games</h3>';
-        }
-        sections.openGames.appendChild(gameElement);
-      }
+      this.addGameElementToSection(gameElement, data, isInGame, isYourTurn, playerCount, sections);
     });
 
     // Add sections to the games list
@@ -251,6 +266,77 @@ class LobbyManager {
         gamesList.appendChild(section);
       }
     });
+  }
+
+  getGameStatusText(status, isYourTurn, isInGame, playerCount) {
+    switch (status) {
+      case "awaitingPlayers":
+        return playerCount >= this.numPlayers ? "Full" : "Waiting for Players";
+      case "awaitingStart":
+        return "Ready to Start";
+      case "active":
+        return isYourTurn ? "Your Turn!" : isInGame ? "In Progress" : "Game in Progress";
+      case "awaitingResults":
+        return "Waiting for Results";
+      case "resultsShown":
+        return "Game Complete";
+      default:
+        return "Unknown Status";
+    }
+  }
+
+  getGameStatusClass(status, isYourTurn) {
+    switch (status) {
+      case "awaitingPlayers":
+        return "waiting";
+      case "awaitingStart":
+        return "waiting";
+      case "active":
+        return isYourTurn ? "waiting" : "active";
+      case "awaitingResults":
+        return "waiting";
+      case "resultsShown":
+        return "";
+      default:
+        return "";
+    }
+  }
+
+  getGameActionButton(gameData, gameId, isInGame, isYourTurn, playerCount) {
+    const { status } = gameData;
+
+    if (isInGame) {
+      return `<button class="btn" onclick="lobbyManager.joinGame('${gameId}')">
+        ${isYourTurn ? 'Take Turn' : 'View Game'}
+      </button>`;
+    }
+
+    if (status === "awaitingPlayers" && playerCount < this.numPlayers) {
+      return `<button class="btn" onclick="lobbyManager.joinGame('${gameId}')">
+        Join Game
+      </button>`;
+    }
+
+    return '';
+  }
+
+  addGameElementToSection(gameElement, gameData, isInGame, isYourTurn, playerCount, sections) {
+    if (isYourTurn) {
+      if (!sections.yourTurn.querySelector('.section-header')) {
+        sections.yourTurn.innerHTML = '<h3 class="section-header">🎲 Your Turn</h3>';
+      }
+      sections.yourTurn.appendChild(gameElement);
+    } else if (isInGame) {
+      if (!sections.yourGames.querySelector('.section-header')) {
+        sections.yourGames.innerHTML = '<h3 class="section-header">🎮 Your Games</h3>';
+      }
+      sections.yourGames.appendChild(gameElement);
+    } else if (gameData.status === "awaitingPlayers" && playerCount < this.numPlayers) {
+      if (!sections.openGames.querySelector('.section-header')) {
+        sections.openGames.innerHTML = '<h3 class="section-header">🎯 Open Games</h3>';
+      }
+      sections.openGames.appendChild(gameElement);
+    }
   }
 
   async addUsername() {
@@ -264,12 +350,10 @@ class LobbyManager {
 
     try {
       await updateProfile(auth.currentUser, { displayName: userText });
+      showAuthenticatedUI({ displayName: userText });
       errorElement.innerHTML = "";
-      document.getElementById("username").innerHTML = userText;
-      document.getElementById("create-username").style.display = "none";
-      document.getElementById("join-create-game").style.display = "";
     } catch (error) {
-      errorElement.innerHTML = "Error updating username: " + error.message;
+      errorElement.innerHTML = `Error updating username: ${error.message}`;
     }
   }
 
@@ -323,6 +407,149 @@ class LobbyManager {
     return Array.from({ length }, () => 
       chars.charAt(Math.floor(Math.random() * chars.length))
     ).join('');
+  }
+
+  showSignupForm() {
+    document.getElementById('signup-form').style.display = 'block';
+    document.getElementById('login-form').style.display = 'none';
+  }
+
+  showLoginForm() {
+    document.getElementById('signup-form').style.display = 'none';
+    document.getElementById('login-form').style.display = 'block';
+  }
+
+  async signUp() {
+    const { email, password, username, isValid } = this.getSignupFormData();
+    if (!isValid) return;
+
+    try {
+      if (auth.currentUser?.isAnonymous) {
+        await this.upgradeAnonymousAccount(email, password, username);
+      } else {
+        await this.createNewAccount(email, password, username);
+      }
+      
+      this.hideAuthForms();
+      showAuthenticatedUI({ displayName: username });
+    } catch (error) {
+      document.getElementById('signup-error').innerHTML = error.message;
+    }
+  }
+
+  getSignupFormData() {
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const username = document.getElementById('user-text').value;
+    const errorElement = document.getElementById('signup-error');
+
+    if (!email || !password || !username) {
+      errorElement.innerHTML = 'Please fill in all fields';
+      return { isValid: false };
+    }
+
+    return { email, password, username, isValid: true };
+  }
+
+  async upgradeAnonymousAccount(email, password, username) {
+    const credential = EmailAuthProvider.credential(email, password);
+    await linkWithCredential(auth.currentUser, credential);
+    await updateProfile(auth.currentUser, { displayName: username });
+  }
+
+  async createNewAccount(email, password, username) {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(userCredential.user, { displayName: username });
+  }
+
+  async login() {
+    const { email, password, isValid } = this.getLoginFormData();
+    if (!isValid) return;
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      this.hideAuthForms();
+      showAuthenticatedUI(userCredential.user);
+    } catch (error) {
+      document.getElementById('login-error').innerHTML = error.message;
+    }
+  }
+
+  getLoginFormData() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorElement = document.getElementById('login-error');
+
+    if (!email || !password) {
+      errorElement.innerHTML = 'Please fill in all fields';
+      return { isValid: false };
+    }
+
+    return { email, password, isValid: true };
+  }
+
+  hideAuthForms() {
+    document.getElementById('signup-form').style.display = 'none';
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('create-username').style.display = 'none';
+    document.getElementById('join-create-game').style.display = '';
+  }
+
+  async logout() {
+    try {
+      await auth.signOut();
+      location.reload();
+    } catch (error) {
+      console.error("Error signing out:", error);
+      alert("Error signing out. Please try again.");
+    }
+  }
+
+  async deleteAccount() {
+    if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      await this.cleanupUserGames(user);
+      await user.delete();
+      // Auth state observer will handle UI updates
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      alert(`Error deleting account: ${error.message}`);
+    }
+  }
+
+  async cleanupUserGames(user) {
+    const userGames = await getDocs(
+      query(this.gamesCollection, where("players", "array-contains", { id: user.uid }))
+    );
+
+    const gameUpdates = userGames.docs.map(async (gameDoc) => {
+      const gameData = gameDoc.data();
+      if (gameData.players.length <= 1) {
+        return deleteDoc(doc(db, "games", gameDoc.id));
+      }
+      
+      const updatedPlayers = gameData.players.filter(p => p.id !== user.uid);
+      return updateDoc(doc(db, "games", gameDoc.id), { players: updatedPlayers });
+    });
+
+    await Promise.all(gameUpdates);
+  }
+
+  // UI Helper Methods
+  showSignupForm() {
+    document.getElementById('signup-form').style.display = 'block';
+    document.getElementById('login-form').style.display = 'none';
+  }
+
+  showLoginForm() {
+    document.getElementById('signup-form').style.display = 'none';
+    document.getElementById('login-form').style.display = 'block';
   }
 }
 
