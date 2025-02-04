@@ -4,6 +4,9 @@ import {
   collection,
   getDocs,
   getFirestore,
+  onSnapshot,
+  query,
+  where,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   updateProfile,
@@ -26,98 +29,190 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const gamesCollection = collection(db, "games");
-
-const querySnapshot = await getDocs(gamesCollection);
-const numPlayers = 4; // This may be stored in each game's gameState later, but for now manually defined
-
-if (!auth.currentUser) {
-  signInAnonymously(auth);
-}
-
-if (auth.currentUser?.displayName) {
-  document.getElementById("user-text").value = auth.currentUser.displayName;
-  document.getElementById("create-username").style.display = "none";
-  document.getElementById("join-create-game").style.display = "";
-  document.getElementById("username").innerHTML = auth.currentUser.displayName;
-}
-
-async function addUsername() {
-  const userText = document.getElementById("user-text").value;
-  if (userText == "") {
-    document.getElementById("error-text").innerHTML =
-      "Make sure to provide a username";
-  } else {
-    if (!auth.currentUser) alert("No user");
-    await updateProfile(auth.currentUser, {
-      displayName: userText,
-    });
-    document.getElementById("error-text").innerHTML = "";
-    document.getElementById("username").innerHTML = userText;
-    document.getElementById("create-username").style.display = "none";
-    document.getElementById("join-create-game").style.display = "";
+class LobbyManager {
+  constructor() {
+    this.gamesCollection = collection(db, "games");
+    this.numPlayers = 4;
+    this.init();
   }
-}
 
-function joinOrCreateRandomGame() {
-  const joinableGames = [];
-  querySnapshot.forEach((doc) => {
-    const gameData = doc.data();
-    const gameId = doc.id;
-    const players = gameData["players"];
-
-    console.log(gameId, players.length, gameData);
-    if (players.length < numPlayers) {
-      joinableGames.push(gameId);
+  async init() {
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
     }
-  });
 
-  const address = window.location.origin;
-
-  if (joinableGames.length == 0) {
-    // Currently no system to make sure the gameId hasn't been taken
-    const gameId = getCharacterString(6);
-    console.log(`${gameId} was randomly generated for the gameId`);
-    location.assign(`${address}/ffpoker?gameId=${gameId}`);
-  } else {
-    const gameId =
-      joinableGames[Math.floor(Math.random() * joinableGames.length)];
-    console.log(`${gameId} was randomly selected from the available games`);
-    location.assign(`${address}/ffpoker?gameId=${gameId}`);
+    this.setupUI();
+    this.setupListeners();
+    this.loadActiveGames();
   }
-}
 
-function createPrivateGame() {
-  try {
-    const gameId = getCharacterString(6);
-    // Determine if a gameId is taken
+  setupUI() {
+    // Add modern styles
+    const style = document.createElement('style');
+    style.textContent = `
+      .lobby-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+      .game-list {
+        display: grid;
+        gap: 10px;
+        margin: 20px 0;
+      }
+      .game-item {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .btn {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .btn:hover {
+        background: #45a049;
+      }
+      .input-field {
+        padding: 8px;
+        margin: 5px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      .error-text {
+        color: #f44336;
+        margin: 5px 0;
+      }
+    `;
+    document.head.appendChild(style);
 
-    //
-    const address = window.location.origin;
-
-    const inviteLink = `${address}/ffpoker?gameId=${gameId.toString()}`;
-    navigator.clipboard.writeText(inviteLink);
-
-    alert(`Copied invite link: ${inviteLink}`);
-
-    location.assign(`${address}/ffpoker?gameId=${gameId.toString()}`);
-  } catch (error) {
-    console.error("Error getting documents: ", error);
+    // Update UI based on auth state
+    if (auth.currentUser?.displayName) {
+      document.getElementById("user-text").value = auth.currentUser.displayName;
+      document.getElementById("create-username").style.display = "none";
+      document.getElementById("join-create-game").style.display = "";
+      document.getElementById("username").innerHTML = auth.currentUser.displayName;
+    }
   }
-}
 
-function getCharacterString(length) {
-  const charList = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  const finalCharArr = [];
-  for (let i = 0; i < length; i++) {
-    finalCharArr.push(
-      charList.charAt(Math.floor(Math.random() * charList.length))
+  setupListeners() {
+    // Real-time updates for active games
+    const activeGamesQuery = query(
+      this.gamesCollection,
+      where("status", "==", "waiting")
     );
+
+    onSnapshot(activeGamesQuery, (snapshot) => {
+      this.updateGamesList(snapshot);
+    });
   }
-  const finalChar = finalCharArr.toString().replaceAll(",", "");
-  return finalChar;
+
+  updateGamesList(snapshot) {
+    const gamesList = document.getElementById("games-list");
+    if (!gamesList) return;
+
+    gamesList.innerHTML = "";
+    snapshot.forEach((doc) => {
+      const gameData = doc.data();
+      const gameElement = document.createElement("div");
+      gameElement.className = "game-item";
+      gameElement.innerHTML = `
+        <div>
+          <h3>Game ${doc.id}</h3>
+          <p>Players: ${gameData.players?.length || 0}/${this.numPlayers}</p>
+        </div>
+        <button class="btn" onclick="lobbyManager.joinGame('${doc.id}')">
+          Join Game
+        </button>
+      `;
+      gamesList.appendChild(gameElement);
+    });
+  }
+
+  async addUsername() {
+    const userText = document.getElementById("user-text").value;
+    const errorElement = document.getElementById("error-text");
+    
+    if (!userText) {
+      errorElement.innerHTML = "Please provide a username";
+      return;
+    }
+
+    try {
+      await updateProfile(auth.currentUser, { displayName: userText });
+      errorElement.innerHTML = "";
+      document.getElementById("username").innerHTML = userText;
+      document.getElementById("create-username").style.display = "none";
+      document.getElementById("join-create-game").style.display = "";
+    } catch (error) {
+      errorElement.innerHTML = "Error updating username: " + error.message;
+    }
+  }
+
+  async loadActiveGames() {
+    const querySnapshot = await getDocs(this.gamesCollection);
+    this.updateGamesList(querySnapshot);
+  }
+
+  async joinOrCreateRandomGame() {
+    const querySnapshot = await getDocs(this.gamesCollection);
+    const joinableGames = [];
+    
+    querySnapshot.forEach((doc) => {
+      const gameData = doc.data();
+      if (gameData.players?.length < this.numPlayers) {
+        joinableGames.push(doc.id);
+      }
+    });
+
+    const gameId = joinableGames.length === 0 
+      ? this.generateGameId() 
+      : joinableGames[Math.floor(Math.random() * joinableGames.length)];
+
+    this.redirectToGame(gameId);
+  }
+
+  async createPrivateGame() {
+    const gameId = this.generateGameId();
+    const inviteLink = `${window.location.origin}/ffpoker?gameId=${gameId}`;
+    
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      alert(`Copied invite link: ${inviteLink}`);
+      this.redirectToGame(gameId);
+    } catch (error) {
+      console.error("Error creating private game:", error);
+      alert("Error creating game. Please try again.");
+    }
+  }
+
+  joinGame(gameId) {
+    this.redirectToGame(gameId);
+  }
+
+  redirectToGame(gameId) {
+    location.assign(`${window.location.origin}/ffpoker?gameId=${gameId}`);
+  }
+
+  generateGameId(length = 6) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    return Array.from({ length }, () => 
+      chars.charAt(Math.floor(Math.random() * chars.length))
+    ).join('');
+  }
 }
 
-window.addUsername = addUsername;
-window.joinOrCreateRandomGame = joinOrCreateRandomGame;
-window.createPrivateGame = createPrivateGame;
+// Initialize the lobby manager
+const lobbyManager = new LobbyManager();
+
+// Expose necessary functions to window
+window.lobbyManager = lobbyManager;
