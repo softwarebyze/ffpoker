@@ -3,32 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fantasy Football Poker - Lobby</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Fantasy Football Texas Hold'em</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: 'Inter', sans-serif;
-        background: #f8f9fa;
-        color: #333;
+      @font-face {
+        font-family: 'Freshman';
+        src: url('Freshman.ttf') format('truetype');
       }
-      
-      .header {
-        background: #1a1a1a;
-        color: white;
-        padding: 1rem;
+
+      body {
+        font-family: Arial, sans-serif;
         text-align: center;
+        background-color: #013220;
+        color: white;
+        margin: 20px;
+      }
+
+      h1, h2 {
+        font-family: 'Freshman', Arial, sans-serif;
+        -webkit-text-stroke: 0.2px black;
+        letter-spacing: -1px;
+        color: white;
       }
 
       .header h1 {
-        margin: 0;
-        font-size: 2rem;
-      }
-
-      #username {
-        color: #4CAF50;
-        font-weight: 500;
+        margin-bottom: 20px;
       }
 
       .container {
@@ -38,36 +37,142 @@
       }
 
       .card {
-        background: white;
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 8px;
         padding: 2rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         margin-bottom: 1rem;
+      }
+
+      .card h2, .card p {
+        color: white;
+        margin: 10px 0;
+      }
+
+      .btn {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        font-family: 'Freshman', Arial, sans-serif;
+        -webkit-text-stroke: 0.2px black;
+      }
+
+      .btn:hover {
+        background: #45a049;
+      }
+
+      .input-field {
+        padding: 8px;
+        margin: 5px 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        font-size: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        color: white;
+        width: 200px;
+      }
+
+      .input-field::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .error-text {
+        color: #ff6b6b;
+        margin: 5px 0;
       }
 
       .btn-group {
         display: flex;
         gap: 1rem;
         margin-top: 1rem;
+        justify-content: center;
       }
 
       .games-container {
         margin-top: 2rem;
       }
 
-      .games-header {
+      .games-header h2 {
+        color: white;
+        margin-bottom: 1rem;
+      }
+
+      .game-list {
+        display: grid;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      .game-item {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
+      }
+
+      .game-item h3 {
+        font-family: 'Freshman', Arial, sans-serif;
+        color: white;
+        -webkit-text-stroke: 0.2px black;
+        margin: 0;
+      }
+
+      .game-item p {
+        color: white;
+        margin: 5px 0;
+      }
+
+      .game-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .game-status span {
+        color: white;
+      }
+
+      .game-item.your-game {
+        border: 2px solid #4CAF50;
+      }
+
+      .game-item.your-turn {
+        border: 2px dashed yellow;
+      }
+
+      .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .status-indicator.active {
+        background: #4CAF50;
+      }
+
+      .status-indicator.waiting {
+        background: #ffd700;
+      }
+
+      #username {
+        color: #4CAF50;
+        font-weight: 500;
+        font-family: 'Freshman', Arial, sans-serif;
+        -webkit-text-stroke: 0.2px black;
       }
     </style>
   </head>
 
   <body>
-    <div class="header">
-      <h1>Fantasy Football Poker</h1>
-    </div>
+    <h1>Fantasy Football Texas Hold'em</h1>
 
     <div class="container">
       <!-- Username Creation -->

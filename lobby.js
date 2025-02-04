@@ -58,16 +58,16 @@ class LobbyManager {
       }
       .game-list {
         display: grid;
-        gap: 10px;
+        gap: 20px;
         margin: 20px 0;
       }
       .game-item {
-        background: #f5f5f5;
-        padding: 15px;
+        padding: 20px;
         border-radius: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-bottom: 15px;
       }
       .btn {
         background: #4CAF50;
@@ -105,10 +105,10 @@ class LobbyManager {
   }
 
   setupListeners() {
-    // Real-time updates for active games
+    // Real-time updates for active games - show all non-completed games
     const activeGamesQuery = query(
       this.gamesCollection,
-      where("status", "==", "waiting")
+      where("status", "in", ["waiting", "in_progress"])
     );
 
     onSnapshot(activeGamesQuery, (snapshot) => {
@@ -121,20 +121,135 @@ class LobbyManager {
     if (!gamesList) return;
 
     gamesList.innerHTML = "";
+
+    const games = [];
     snapshot.forEach((doc) => {
       const gameData = doc.data();
+      const isInGame = gameData.players?.some(p => p.id === auth.currentUser?.uid);
+      
+      // Check if it's your turn by matching your ID with the player at currentPlayer index
+      const isYourTurn = isInGame && 
+        gameData.players?.[gameData.currentPlayer]?.id === auth.currentUser?.uid;
+      
+      games.push({
+        id: doc.id,
+        data: gameData,
+        isInGame,
+        isYourTurn
+      });
+    });
+
+    // Sort games: Your turn first, then your games, then open games, then full games
+    games.sort((a, b) => {
+      if (a.isYourTurn && !b.isYourTurn) return -1;
+      if (!a.isYourTurn && b.isYourTurn) return 1;
+      if (a.isInGame && !b.isInGame) return -1;
+      if (!a.isInGame && b.isInGame) return 1;
+      
+      const aFull = (a.data.players?.length || 0) >= this.numPlayers;
+      const bFull = (b.data.players?.length || 0) >= this.numPlayers;
+      if (!aFull && bFull) return -1;
+      if (aFull && !bFull) return 1;
+      
+      return 0;
+    });
+
+    // Create sections for different game types
+    const sections = {
+      yourTurn: document.createElement('div'),
+      yourGames: document.createElement('div'),
+      openGames: document.createElement('div')
+    };
+
+    sections.yourTurn.className = 'game-section your-turn-section';
+    sections.yourGames.className = 'game-section your-games-section';
+    sections.openGames.className = 'game-section open-games-section';
+
+    // Add styles for sections
+    const style = document.createElement('style');
+    style.textContent = `
+      .game-section {
+        margin-bottom: 40px;
+      }
+      .game-section:empty {
+        display: none;
+      }
+      .section-header {
+        font-family: 'Freshman', Arial, sans-serif;
+        color: white;
+        text-align: left;
+        margin: 20px 0;
+        padding: 5px;
+        -webkit-text-stroke: 0.2px black;
+      }
+      .your-turn-section .game-item {
+        transform: scale(1.02);
+      }
+      .game-section .game-item:last-child {
+        margin-bottom: 0;
+      }
+    `;
+    document.head.appendChild(style);
+
+    games.forEach(({id, data, isInGame, isYourTurn}) => {
       const gameElement = document.createElement("div");
-      gameElement.className = "game-item";
+      const playerCount = data.players?.length || 0;
+      
+      gameElement.className = `game-item${isInGame ? ' your-game' : ''}${isYourTurn ? ' your-turn' : ''}`;
+      
+      const statusText = isYourTurn ? "Your Turn!" : 
+                        isInGame ? "In Progress" : 
+                        playerCount >= this.numPlayers ? "Full" : "Open";
+      
+      const statusClass = isYourTurn ? "waiting" : 
+                         isInGame ? "active" : 
+                         playerCount >= this.numPlayers ? "" : "active";
+
       gameElement.innerHTML = `
         <div>
-          <h3>Game ${doc.id}</h3>
-          <p>Players: ${gameData.players?.length || 0}/${this.numPlayers}</p>
+          <h3 style="font-family: 'Freshman', Arial, sans-serif; margin: 0;">Game ${id}</h3>
+          <p style="margin: 5px 0;">Players: ${playerCount}/${this.numPlayers}</p>
+          <div class="game-status">
+            <span class="status-indicator ${statusClass}"></span>
+            <span>${statusText}</span>
+          </div>
         </div>
-        <button class="btn" onclick="lobbyManager.joinGame('${doc.id}')">
-          Join Game
-        </button>
+        ${isInGame ? 
+          `<button class="btn" onclick="lobbyManager.joinGame('${id}')">
+            ${isYourTurn ? 'Take Turn' : 'View Game'}
+           </button>` :
+          playerCount < this.numPlayers ?
+          `<button class="btn" onclick="lobbyManager.joinGame('${id}')">
+            Join Game
+           </button>` :
+          ''
+        }
       `;
-      gamesList.appendChild(gameElement);
+
+      // Add to appropriate section
+      if (isYourTurn) {
+        if (!sections.yourTurn.querySelector('.section-header')) {
+          sections.yourTurn.innerHTML = '<h3 class="section-header">🎲 Your Turn</h3>';
+        }
+        sections.yourTurn.appendChild(gameElement);
+      } else if (isInGame) {
+        if (!sections.yourGames.querySelector('.section-header')) {
+          sections.yourGames.innerHTML = '<h3 class="section-header">🎮 Your Games</h3>';
+        }
+        sections.yourGames.appendChild(gameElement);
+      } else if (playerCount < this.numPlayers) {
+        if (!sections.openGames.querySelector('.section-header')) {
+          sections.openGames.innerHTML = '<h3 class="section-header">🎯 Open Games</h3>';
+        }
+        sections.openGames.appendChild(gameElement);
+      }
+    });
+
+    // Add sections to the games list
+    Object.values(sections).forEach(section => {
+      if (section.children.length > 1) { // > 1 because of header
+        gamesList.appendChild(section);
+      }
     });
   }
 
