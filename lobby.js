@@ -108,7 +108,7 @@ class LobbyManager {
     // Real-time updates for active games - show all non-completed games
     const activeGamesQuery = query(
       this.gamesCollection,
-      where("status", "in", ["waiting", "in_progress"])
+      where("status", "in", ["waiting", "in_progress", "active"])
     );
 
     onSnapshot(activeGamesQuery, (snapshot) => {
