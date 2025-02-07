@@ -10,6 +10,8 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  getDoc,
+  setDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   updateProfile,
@@ -19,7 +21,7 @@ import {
   signInWithEmailAndPassword,
   linkWithCredential,
   EmailAuthProvider,
-  browserSessionPersistence,
+  browserLocalPersistence,
   setPersistence,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -34,65 +36,188 @@ const firebaseConfig = {
   appId: "1:409640502099:web:d7096f9f32ad152b80d7a6",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// Enable session persistence
-setPersistence(auth, browserSessionPersistence);
-
-// Initialize anonymous auth
-signInAnonymously(auth).catch(error => {
-  console.error("Error signing in anonymously:", error);
-});
-
-// Handle auth state changes
-onAuthStateChanged(auth, handleAuthStateChange);
-
-function handleAuthStateChange(user) {
-  if (!user) {
-    redirectToUsername();
-    return;
+class AuthManager {
+  constructor() {
+    this.app = initializeApp(firebaseConfig);
+    this.db = getFirestore(this.app);
+    this.auth = getAuth(this.app);
+    this.initialized = false;
   }
 
-  if (!user.displayName) {
-    showUsernameCreation();
-    return;
+  async initialize() {
+    if (this.initialized) return;
+    
+    try {
+      await setPersistence(this.auth, browserLocalPersistence);
+      
+      // Wait for initial auth state
+      const initialUser = await new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(this.auth, (user) => {
+          console.log('Initial auth state:', user?.displayName, user?.isAnonymous);
+          unsubscribe();
+          resolve(user);
+        });
+      });
+
+      // Set up permanent auth listener
+      onAuthStateChanged(this.auth, this.handleAuthStateChanged.bind(this));
+      
+      this.initialized = true;
+    } catch (error) {
+      console.error("Error initializing auth:", error);
+    }
   }
 
-  showAuthenticatedUI(user);
-}
+  async handleAuthStateChanged(user) {
+    console.log('Auth state changed:', user?.displayName, user?.isAnonymous);
+    
+    if (!user) {
+      if (!this.auth.currentUser) {
+        try {
+          await signInAnonymously(this.auth);
+          console.log('Created new anonymous user');
+        } catch (error) {
+          console.error("Error signing in anonymously:", error);
+        }
+      }
+      this.showUsernameCreation();
+      return;
+    }
 
-function redirectToUsername() {
-  location.replace(`${window.location.origin}/username${window.location.search}`);
-}
+    if (!user.displayName) {
+      console.log('User has no displayName');
+      this.showUsernameCreation();
+      return;
+    }
 
-function showUsernameCreation() {
-  document.getElementById("create-username").style.display = "";
-  document.getElementById("join-create-game").style.display = "none";
-}
+    await this.syncUserWithFirestore(user);
+    this.showAuthenticatedUI(user);
+  }
 
-function showAuthenticatedUI(user) {
-  const userTextEl = document.getElementById("user-text");
-  const createUsernameEl = document.getElementById("create-username");
-  const joinCreateGameEl = document.getElementById("join-create-game");
-  const usernameEl = document.getElementById("username");
+  async syncUserWithFirestore(user) {
+    const userDoc = doc(this.db, 'users', user.uid);
+    const userSnapshot = await getDoc(userDoc);
+    
+    const userData = {
+      username: user.displayName,
+      isAnonymous: user.isAnonymous,
+      lastLoginAt: new Date().toISOString()
+    };
 
-  userTextEl.value = user.displayName;
-  createUsernameEl.style.display = "none";
-  joinCreateGameEl.style.display = "";
-  usernameEl.innerHTML = user.displayName;
+    if (!userSnapshot.exists()) {
+      await setDoc(userDoc, {
+        ...userData,
+        createdAt: new Date().toISOString()
+      });
+    } else {
+      await updateDoc(userDoc, userData);
+    }
+  }
+
+  async setUsername(username) {
+    if (!this.auth.currentUser || !username) return;
+    
+    try {
+      await updateProfile(this.auth.currentUser, { displayName: username });
+      await this.syncUserWithFirestore(this.auth.currentUser);
+      this.showAuthenticatedUI(this.auth.currentUser);
+      return true;
+    } catch (error) {
+      throw new Error(`Error updating username: ${error.message}`);
+    }
+  }
+
+  async upgradeAnonymousAccount(email, password) {
+    if (!this.auth.currentUser?.isAnonymous) return;
+
+    try {
+      const credential = EmailAuthProvider.credential(email, password);
+      await linkWithCredential(this.auth.currentUser, credential);
+      await this.syncUserWithFirestore(this.auth.currentUser);
+      return true;
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error('This email is already registered. Please login instead.');
+      }
+      throw error;
+    }
+  }
+
+  async signUp(email, password, username) {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+      await updateProfile(userCredential.user, { displayName: username });
+      await this.syncUserWithFirestore(userCredential.user);
+      return true;
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error('This email is already registered. Please login instead.');
+      }
+      throw error;
+    }
+  }
+
+  async login(email, password) {
+    try {
+      const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
+      await this.syncUserWithFirestore(userCredential.user);
+      return true;
+    } catch (error) {
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        throw new Error('Invalid email or password.');
+      }
+      throw error;
+    }
+  }
+
+  async logout() {
+    try {
+      await this.auth.signOut();
+      location.reload();
+    } catch (error) {
+      console.error("Error signing out:", error);
+      throw new Error("Error signing out. Please try again.");
+    }
+  }
+
+  showUsernameCreation() {
+    document.getElementById("create-username").style.display = "";
+    document.getElementById("join-create-game").style.display = "none";
+    document.getElementById("upgrade-form").style.display = "none";
+  }
+
+  showAuthenticatedUI(user) {
+    if (!user?.displayName) return;
+
+    const userTextEl = document.getElementById("user-text");
+    const createUsernameEl = document.getElementById("create-username");
+    const joinCreateGameEl = document.getElementById("join-create-game");
+    const usernameEl = document.getElementById("username");
+    const upgradeFormEl = document.getElementById("upgrade-form");
+    const saveProgressBtn = document.getElementById("save-progress-btn");
+
+    userTextEl.value = user.displayName;
+    createUsernameEl.style.display = "none";
+    joinCreateGameEl.style.display = "";
+    upgradeFormEl.style.display = "none";
+    usernameEl.innerHTML = user.displayName;
+
+    if (saveProgressBtn) {
+      saveProgressBtn.style.display = user.isAnonymous ? "" : "none";
+    }
+  }
 }
 
 class LobbyManager {
   constructor() {
-    this.gamesCollection = collection(db, "games");
+    this.auth = new AuthManager();
+    this.gamesCollection = collection(this.auth.db, "games");
     this.numPlayers = 4;
     this.init();
   }
 
   async init() {
+    await this.auth.initialize();
     this.setupUI();
     this.setupListeners();
     await this.loadActiveGames();
@@ -171,10 +296,10 @@ class LobbyManager {
     const games = [];
     snapshot.forEach((doc) => {
       const gameData = doc.data();
-      const isInGame = gameData.players?.some(p => p.id === auth.currentUser?.uid);
+      const isInGame = gameData.players?.some(p => p.id === this.auth.auth.currentUser?.uid);
       const isYourTurn = isInGame && 
         gameData.status === "active" &&
-        gameData.players?.[gameData.currentPlayer]?.id === auth.currentUser?.uid;
+        gameData.players?.[gameData.currentPlayer]?.id === this.auth.auth.currentUser?.uid;
       
       games.push({
         id: doc.id,
@@ -349,11 +474,10 @@ class LobbyManager {
     }
 
     try {
-      await updateProfile(auth.currentUser, { displayName: userText });
-      showAuthenticatedUI({ displayName: userText });
+      await this.auth.setUsername(userText);
       errorElement.innerHTML = "";
     } catch (error) {
-      errorElement.innerHTML = `Error updating username: ${error.message}`;
+      errorElement.innerHTML = error.message;
     }
   }
 
@@ -410,6 +534,8 @@ class LobbyManager {
   }
 
   showSignupForm() {
+    const username = document.getElementById('user-text').value;
+    document.getElementById('signup-username').value = username;
     document.getElementById('signup-form').style.display = 'block';
     document.getElementById('login-form').style.display = 'none';
   }
@@ -419,19 +545,23 @@ class LobbyManager {
     document.getElementById('login-form').style.display = 'block';
   }
 
+  showUpgradeForm() {
+    const username = document.getElementById('username').innerText;
+    document.getElementById('join-create-game').style.display = 'none';
+    document.getElementById('upgrade-form').style.display = 'block';
+  }
+
   async signUp() {
     const { email, password, username, isValid } = this.getSignupFormData();
     if (!isValid) return;
 
     try {
-      if (auth.currentUser?.isAnonymous) {
-        await this.upgradeAnonymousAccount(email, password, username);
+      if (this.auth.auth.currentUser?.isAnonymous) {
+        await this.auth.upgradeAnonymousAccount(email, password);
       } else {
-        await this.createNewAccount(email, password, username);
+        await this.auth.signUp(email, password, username);
       }
-      
       this.hideAuthForms();
-      showAuthenticatedUI({ displayName: username });
     } catch (error) {
       document.getElementById('signup-error').innerHTML = error.message;
     }
@@ -448,18 +578,12 @@ class LobbyManager {
       return { isValid: false };
     }
 
+    if (password.length < 6) {
+      errorElement.innerHTML = 'Password must be at least 6 characters long';
+      return { isValid: false };
+    }
+
     return { email, password, username, isValid: true };
-  }
-
-  async upgradeAnonymousAccount(email, password, username) {
-    const credential = EmailAuthProvider.credential(email, password);
-    await linkWithCredential(auth.currentUser, credential);
-    await updateProfile(auth.currentUser, { displayName: username });
-  }
-
-  async createNewAccount(email, password, username) {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(userCredential.user, { displayName: username });
   }
 
   async login() {
@@ -467,9 +591,8 @@ class LobbyManager {
     if (!isValid) return;
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await this.auth.login(email, password);
       this.hideAuthForms();
-      showAuthenticatedUI(userCredential.user);
     } catch (error) {
       document.getElementById('login-error').innerHTML = error.message;
     }
@@ -495,22 +618,12 @@ class LobbyManager {
     document.getElementById('join-create-game').style.display = '';
   }
 
-  async logout() {
-    try {
-      await auth.signOut();
-      location.reload();
-    } catch (error) {
-      console.error("Error signing out:", error);
-      alert("Error signing out. Please try again.");
-    }
-  }
-
   async deleteAccount() {
     if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
       return;
     }
 
-    const user = auth.currentUser;
+    const user = this.auth.auth.currentUser;
     if (!user) return;
 
     try {
@@ -531,30 +644,48 @@ class LobbyManager {
     const gameUpdates = userGames.docs.map(async (gameDoc) => {
       const gameData = gameDoc.data();
       if (gameData.players.length <= 1) {
-        return deleteDoc(doc(db, "games", gameDoc.id));
+        return deleteDoc(doc(this.gamesCollection, gameDoc.id));
       }
       
       const updatedPlayers = gameData.players.filter(p => p.id !== user.uid);
-      return updateDoc(doc(db, "games", gameDoc.id), { players: updatedPlayers });
+      return updateDoc(doc(this.gamesCollection, gameDoc.id), { players: updatedPlayers });
     });
 
     await Promise.all(gameUpdates);
   }
 
-  // UI Helper Methods
-  showSignupForm() {
-    document.getElementById('signup-form').style.display = 'block';
-    document.getElementById('login-form').style.display = 'none';
+  cancelUpgrade() {
+    document.getElementById('join-create-game').style.display = '';
+    document.getElementById('upgrade-form').style.display = 'none';
+    document.getElementById('upgrade-error').innerHTML = '';
+    document.getElementById('upgrade-email').value = '';
+    document.getElementById('upgrade-password').value = '';
   }
 
-  showLoginForm() {
-    document.getElementById('signup-form').style.display = 'none';
-    document.getElementById('login-form').style.display = 'block';
+  async upgradeToFullAccount() {
+    const email = document.getElementById('upgrade-email').value;
+    const password = document.getElementById('upgrade-password').value;
+    const errorElement = document.getElementById('upgrade-error');
+
+    if (!email || !password) {
+      errorElement.innerHTML = 'Please fill in all fields';
+      return;
+    }
+
+    if (password.length < 6) {
+      errorElement.innerHTML = 'Password must be at least 6 characters long';
+      return;
+    }
+
+    try {
+      await this.auth.upgradeAnonymousAccount(email, password);
+      this.cancelUpgrade();
+    } catch (error) {
+      errorElement.innerHTML = error.message;
+    }
   }
 }
 
-// Initialize the lobby manager
+// Initialize and expose to window
 const lobbyManager = new LobbyManager();
-
-// Expose necessary functions to window
 window.lobbyManager = lobbyManager;
