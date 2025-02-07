@@ -684,6 +684,15 @@ class LobbyManager {
       errorElement.innerHTML = error.message;
     }
   }
+
+  async logout() {
+    try {
+      await this.auth.logout();
+    } catch (error) {
+      console.error("Error logging out:", error);
+      alert("Error logging out. Please try again.");
+    }
+  }
 }
 
 // Initialize and expose to window
