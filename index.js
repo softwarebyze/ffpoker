@@ -146,55 +146,90 @@ let playerId;
 let gameRef;
 let gameState;
 
-onAuthStateChanged(auth, async (user) => {
-  if (user && user.uid && user.displayName) {
-    playerId = user.uid;
-    document.getElementById("player-id").innerHTML = playerId;
-    document.getElementById("username").innerHTML = user.displayName;
-
-    document.getElementById(
-      "invite-link-clickable"
-    ).href = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
-    document.getElementById(
-      "invite-link-clickable"
-    ).innerHTML = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
-
-    await loadCSVData(); // Ensure CSV data is loaded before continuing
-
-    await loadTeamData();
-    await loadInitialGameState();
-    showGame();
-
-    if (gameState.status === "awaitingPlayers") {
-      await joinGame();
-    }
-    if (gameState.status === "awaitingStart") {
-      document.getElementById("startGame").style.display = "";
-    }
-    if (gameState.status === "awaitingResults") {
-      checkTime();
-    }
-
-    const players = gameState.players;
-    for (const playerIndex in players) {
-      if (players[playerIndex]["id"] === playerId) {
-        const newPlayerIndex = Number(playerIndex) + 1;
-        document.getElementById("player-number").innerHTML = newPlayerIndex;
-      }
-    }
-  } else {
-    location.replace(
-      `${window.location.origin}/username${window.location.search}`
-    );
-  }
-});
-
-// Existing and future Auth states are now persisted in the current
-// session only. Closing the window would clear any existing state even
-// if a user forgets to sign out.
+// Initialize Firebase and enable persistence
 setPersistence(auth, browserSessionPersistence);
 
-signInAnonymously(auth);
+// Initialize anonymous auth
+signInAnonymously(auth).catch(error => {
+  console.error("Error signing in anonymously:", error);
+});
+
+// Handle auth state changes
+onAuthStateChanged(auth, handleAuthStateChange);
+
+async function handleAuthStateChange(user) {
+  if (!user) {
+    redirectToUsername();
+    return;
+  }
+
+  if (!user.displayName) {
+    redirectToUsername();
+    return;
+  }
+
+  await initializeAuthenticatedUser(user);
+}
+
+function redirectToUsername() {
+  location.replace(`${window.location.origin}/username${window.location.search}`);
+}
+
+async function initializeAuthenticatedUser(user) {
+  playerId = user.uid;
+  updateUserDisplay(user);
+  await initializeGameState();
+  await handleGameState();
+}
+
+function updateUserDisplay(user) {
+  document.getElementById("player-id").innerHTML = user.uid;
+  document.getElementById("username").innerHTML = user.displayName;
+  updateInviteLink();
+}
+
+function updateInviteLink() {
+  const inviteLink = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
+  const inviteLinkEl = document.getElementById("invite-link-clickable");
+  inviteLinkEl.href = inviteLink;
+  inviteLinkEl.innerHTML = inviteLink;
+}
+
+async function initializeGameState() {
+  await loadCSVData();
+  await loadTeamData();
+  await loadInitialGameState();
+  showGame();
+}
+
+async function handleGameState() {
+  if (!gameState) return;
+
+  if (gameState.status === "awaitingPlayers") {
+    await joinGame();
+  }
+
+  if (gameState.status === "awaitingStart") {
+    document.getElementById("startGame").style.display = "";
+  }
+
+  if (gameState.status === "awaitingResults") {
+    checkTime();
+  }
+
+  updatePlayerNumber();
+}
+
+function updatePlayerNumber() {
+  const players = gameState.players;
+  if (!players) return;
+
+  const playerIndex = players.findIndex(p => p.id === playerId);
+  if (playerIndex === -1) return;
+
+  const newPlayerIndex = playerIndex + 1;
+  document.getElementById("player-number").innerHTML = newPlayerIndex;
+}
 
 async function loadInitialGameState() {
   gameRef = doc(db, "games", gameId);
