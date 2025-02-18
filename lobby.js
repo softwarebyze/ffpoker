@@ -534,10 +534,18 @@ class LobbyManager {
   }
 
   showSignupForm() {
-    const username = document.getElementById('user-text').value;
-    document.getElementById('signup-username').value = username;
-    document.getElementById('signup-form').style.display = 'block';
-    document.getElementById('login-form').style.display = 'none';
+    const signupForm = document.getElementById('signup-form');
+    const loginForm = document.getElementById('login-form');
+    const userTextEl = document.getElementById('user-text');
+    
+    if (signupForm) signupForm.style.display = 'block';
+    if (loginForm) loginForm.style.display = 'none';
+    
+    // Preserve username if it exists
+    const usernameEl = document.getElementById('username');
+    if (usernameEl && usernameEl.innerHTML && userTextEl) {
+      userTextEl.value = usernameEl.innerHTML;
+    }
   }
 
   showLoginForm() {
@@ -546,7 +554,6 @@ class LobbyManager {
   }
 
   showUpgradeForm() {
-    const username = document.getElementById('username').innerText;
     document.getElementById('join-create-game').style.display = 'none';
     document.getElementById('upgrade-form').style.display = 'block';
   }
@@ -561,6 +568,13 @@ class LobbyManager {
       } else {
         await this.auth.signUp(email, password, username);
       }
+      
+      // Ensure username is set in the UI
+      const user = this.auth.auth.currentUser;
+      if (user && username) {
+        await this.auth.setUsername(username);
+      }
+      
       this.hideAuthForms();
     } catch (error) {
       document.getElementById('signup-error').innerHTML = error.message;
@@ -583,6 +597,7 @@ class LobbyManager {
       return { isValid: false };
     }
 
+    errorElement.innerHTML = ''; // Clear any previous errors
     return { email, password, username, isValid: true };
   }
 
