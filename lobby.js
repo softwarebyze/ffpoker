@@ -46,14 +46,18 @@ class AuthManager {
 
   async initialize() {
     if (this.initialized) return;
-    
+
     try {
       await setPersistence(this.auth, browserLocalPersistence);
-      
+
       // Wait for initial auth state
       const initialUser = await new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(this.auth, (user) => {
-          console.log('Initial auth state:', user?.displayName, user?.isAnonymous);
+          console.log(
+            "Initial auth state:",
+            user?.displayName,
+            user?.isAnonymous
+          );
           unsubscribe();
           resolve(user);
         });
@@ -61,7 +65,7 @@ class AuthManager {
 
       // Set up permanent auth listener
       onAuthStateChanged(this.auth, this.handleAuthStateChanged.bind(this));
-      
+
       this.initialized = true;
     } catch (error) {
       console.error("Error initializing auth:", error);
@@ -69,13 +73,13 @@ class AuthManager {
   }
 
   async handleAuthStateChanged(user) {
-    console.log('Auth state changed:', user?.displayName, user?.isAnonymous);
-    
+    console.log("Auth state changed:", user?.displayName, user?.isAnonymous);
+
     if (!user) {
       if (!this.auth.currentUser) {
         try {
           await signInAnonymously(this.auth);
-          console.log('Created new anonymous user');
+          console.log("Created new anonymous user");
         } catch (error) {
           console.error("Error signing in anonymously:", error);
         }
@@ -85,7 +89,7 @@ class AuthManager {
     }
 
     if (!user.displayName) {
-      console.log('User has no displayName');
+      console.log("User has no displayName");
       this.showUsernameCreation();
       return;
     }
@@ -95,19 +99,19 @@ class AuthManager {
   }
 
   async syncUserWithFirestore(user) {
-    const userDoc = doc(this.db, 'users', user.uid);
+    const userDoc = doc(this.db, "users", user.uid);
     const userSnapshot = await getDoc(userDoc);
-    
+
     const userData = {
       username: user.displayName,
       isAnonymous: user.isAnonymous,
-      lastLoginAt: new Date().toISOString()
+      lastLoginAt: new Date().toISOString(),
     };
 
     if (!userSnapshot.exists()) {
       await setDoc(userDoc, {
         ...userData,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
     } else {
       await updateDoc(userDoc, userData);
@@ -116,7 +120,7 @@ class AuthManager {
 
   async setUsername(username) {
     if (!this.auth.currentUser || !username) return;
-    
+
     try {
       await updateProfile(this.auth.currentUser, { displayName: username });
       await this.syncUserWithFirestore(this.auth.currentUser);
@@ -136,8 +140,10 @@ class AuthManager {
       await this.syncUserWithFirestore(this.auth.currentUser);
       return true;
     } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
-        throw new Error('This email is already registered. Please login instead.');
+      if (error.code === "auth/email-already-in-use") {
+        throw new Error(
+          "This email is already registered. Please login instead."
+        );
       }
       throw error;
     }
@@ -145,13 +151,19 @@ class AuthManager {
 
   async signUp(email, password, username) {
     try {
-      const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        this.auth,
+        email,
+        password
+      );
       await updateProfile(userCredential.user, { displayName: username });
       await this.syncUserWithFirestore(userCredential.user);
       return true;
     } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
-        throw new Error('This email is already registered. Please login instead.');
+      if (error.code === "auth/email-already-in-use") {
+        throw new Error(
+          "This email is already registered. Please login instead."
+        );
       }
       throw error;
     }
@@ -159,12 +171,19 @@ class AuthManager {
 
   async login(email, password) {
     try {
-      const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        this.auth,
+        email,
+        password
+      );
       await this.syncUserWithFirestore(userCredential.user);
       return true;
     } catch (error) {
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        throw new Error('Invalid email or password.');
+      if (
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/wrong-password"
+      ) {
+        throw new Error("Invalid email or password.");
       }
       throw error;
     }
@@ -228,7 +247,7 @@ class LobbyManager {
   }
 
   addStyles() {
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       .lobby-container {
         max-width: 800px;
@@ -279,7 +298,13 @@ class LobbyManager {
   setupListeners() {
     const activeGamesQuery = query(
       this.gamesCollection,
-      where("status", "in", ["awaitingPlayers", "awaitingStart", "active", "awaitingResults", "resultsShown"])
+      where("status", "in", [
+        "awaitingPlayers",
+        "awaitingStart",
+        "active",
+        "awaitingResults",
+        "resultsShown",
+      ])
     );
 
     onSnapshot(activeGamesQuery, (snapshot) => {
@@ -296,16 +321,20 @@ class LobbyManager {
     const games = [];
     snapshot.forEach((doc) => {
       const gameData = doc.data();
-      const isInGame = gameData.players?.some(p => p.id === this.auth.auth.currentUser?.uid);
-      const isYourTurn = isInGame && 
+      const isInGame = gameData.players?.some(
+        (p) => p.id === this.auth.auth.currentUser?.uid
+      );
+      const isYourTurn =
+        isInGame &&
         gameData.status === "active" &&
-        gameData.players?.[gameData.currentPlayer]?.id === this.auth.auth.currentUser?.uid;
-      
+        gameData.players?.[gameData.currentPlayer]?.id ===
+          this.auth.auth.currentUser?.uid;
+
       games.push({
         id: doc.id,
         data: gameData,
         isInGame,
-        isYourTurn
+        isYourTurn,
       });
     });
 
@@ -315,28 +344,28 @@ class LobbyManager {
       if (!a.isYourTurn && b.isYourTurn) return 1;
       if (a.isInGame && !b.isInGame) return -1;
       if (!a.isInGame && b.isInGame) return 1;
-      
+
       const aFull = (a.data.players?.length || 0) >= this.numPlayers;
       const bFull = (b.data.players?.length || 0) >= this.numPlayers;
       if (!aFull && bFull) return -1;
       if (aFull && !bFull) return 1;
-      
+
       return 0;
     });
 
     // Create sections for different game types
     const sections = {
-      yourTurn: document.createElement('div'),
-      yourGames: document.createElement('div'),
-      openGames: document.createElement('div')
+      yourTurn: document.createElement("div"),
+      yourGames: document.createElement("div"),
+      openGames: document.createElement("div"),
     };
 
-    sections.yourTurn.className = 'game-section your-turn-section';
-    sections.yourGames.className = 'game-section your-games-section';
-    sections.openGames.className = 'game-section open-games-section';
+    sections.yourTurn.className = "game-section your-turn-section";
+    sections.yourGames.className = "game-section your-games-section";
+    sections.openGames.className = "game-section open-games-section";
 
     // Add styles for sections
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       .game-section {
         margin-bottom: 40px;
@@ -361,19 +390,28 @@ class LobbyManager {
     `;
     document.head.appendChild(style);
 
-    games.forEach(({id, data, isInGame, isYourTurn}) => {
+    games.forEach(({ id, data, isInGame, isYourTurn }) => {
       const gameElement = document.createElement("div");
       const playerCount = data.players?.length || 0;
-      
-      gameElement.className = `game-item${isInGame ? ' your-game' : ''}${isYourTurn ? ' your-turn' : ''}`;
-      
-      const statusText = this.getGameStatusText(data.status, isYourTurn, isInGame, playerCount);
+
+      gameElement.className = `game-item${isInGame ? " your-game" : ""}${
+        isYourTurn ? " your-turn" : ""
+      }`;
+
+      const statusText = this.getGameStatusText(
+        data.status,
+        isYourTurn,
+        isInGame,
+        playerCount
+      );
       const statusClass = this.getGameStatusClass(data.status, isYourTurn);
 
       gameElement.innerHTML = `
         <div>
           <h3 style="font-family: 'Freshman', Arial, sans-serif; margin: 0;">Game ${id}</h3>
-          <p style="margin: 5px 0;">Players: ${playerCount}/${this.numPlayers}</p>
+          <p style="margin: 5px 0;">Players: ${playerCount}/${
+        this.numPlayers
+      }</p>
           <div class="game-status">
             <span class="status-indicator ${statusClass}"></span>
             <span>${statusText}</span>
@@ -382,12 +420,20 @@ class LobbyManager {
         ${this.getGameActionButton(data, id, isInGame, isYourTurn, playerCount)}
       `;
 
-      this.addGameElementToSection(gameElement, data, isInGame, isYourTurn, playerCount, sections);
+      this.addGameElementToSection(
+        gameElement,
+        data,
+        isInGame,
+        isYourTurn,
+        playerCount,
+        sections
+      );
     });
 
     // Add sections to the games list
-    Object.values(sections).forEach(section => {
-      if (section.children.length > 1) { // > 1 because of header
+    Object.values(sections).forEach((section) => {
+      if (section.children.length > 1) {
+        // > 1 because of header
         gamesList.appendChild(section);
       }
     });
@@ -400,7 +446,11 @@ class LobbyManager {
       case "awaitingStart":
         return "Ready to Start";
       case "active":
-        return isYourTurn ? "Your Turn!" : isInGame ? "In Progress" : "Game in Progress";
+        return isYourTurn
+          ? "Your Turn!"
+          : isInGame
+          ? "In Progress"
+          : "Game in Progress";
       case "awaitingResults":
         return "Waiting for Results";
       case "resultsShown":
@@ -432,7 +482,7 @@ class LobbyManager {
 
     if (isInGame) {
       return `<button class="btn" onclick="lobbyManager.joinGame('${gameId}')">
-        ${isYourTurn ? 'Take Turn' : 'View Game'}
+        ${isYourTurn ? "Take Turn" : "View Game"}
       </button>`;
     }
 
@@ -442,23 +492,36 @@ class LobbyManager {
       </button>`;
     }
 
-    return '';
+    return "";
   }
 
-  addGameElementToSection(gameElement, gameData, isInGame, isYourTurn, playerCount, sections) {
+  addGameElementToSection(
+    gameElement,
+    gameData,
+    isInGame,
+    isYourTurn,
+    playerCount,
+    sections
+  ) {
     if (isYourTurn) {
-      if (!sections.yourTurn.querySelector('.section-header')) {
-        sections.yourTurn.innerHTML = '<h3 class="section-header">🎲 Your Turn</h3>';
+      if (!sections.yourTurn.querySelector(".section-header")) {
+        sections.yourTurn.innerHTML =
+          '<h3 class="section-header">🎲 Your Turn</h3>';
       }
       sections.yourTurn.appendChild(gameElement);
     } else if (isInGame) {
-      if (!sections.yourGames.querySelector('.section-header')) {
-        sections.yourGames.innerHTML = '<h3 class="section-header">🎮 Your Games</h3>';
+      if (!sections.yourGames.querySelector(".section-header")) {
+        sections.yourGames.innerHTML =
+          '<h3 class="section-header">🎮 Your Games</h3>';
       }
       sections.yourGames.appendChild(gameElement);
-    } else if (gameData.status === "awaitingPlayers" && playerCount < this.numPlayers) {
-      if (!sections.openGames.querySelector('.section-header')) {
-        sections.openGames.innerHTML = '<h3 class="section-header">🎯 Open Games</h3>';
+    } else if (
+      gameData.status === "awaitingPlayers" &&
+      playerCount < this.numPlayers
+    ) {
+      if (!sections.openGames.querySelector(".section-header")) {
+        sections.openGames.innerHTML =
+          '<h3 class="section-header">🎯 Open Games</h3>';
       }
       sections.openGames.appendChild(gameElement);
     }
@@ -467,7 +530,7 @@ class LobbyManager {
   async addUsername() {
     const userText = document.getElementById("user-text").value;
     const errorElement = document.getElementById("error-text");
-    
+
     if (!userText) {
       errorElement.innerHTML = "Please provide a username";
       return;
@@ -489,7 +552,7 @@ class LobbyManager {
   async joinOrCreateRandomGame() {
     const querySnapshot = await getDocs(this.gamesCollection);
     const joinableGames = [];
-    
+
     querySnapshot.forEach((doc) => {
       const gameData = doc.data();
       if (gameData.players?.length < this.numPlayers) {
@@ -497,9 +560,10 @@ class LobbyManager {
       }
     });
 
-    const gameId = joinableGames.length === 0 
-      ? this.generateGameId() 
-      : joinableGames[Math.floor(Math.random() * joinableGames.length)];
+    const gameId =
+      joinableGames.length === 0
+        ? this.generateGameId()
+        : joinableGames[Math.floor(Math.random() * joinableGames.length)];
 
     this.redirectToGame(gameId);
   }
@@ -507,7 +571,7 @@ class LobbyManager {
   async createPrivateGame() {
     const gameId = this.generateGameId();
     const inviteLink = `${window.location.origin}/ffpoker?gameId=${gameId}`;
-    
+
     try {
       await navigator.clipboard.writeText(inviteLink);
       alert(`Copied invite link: ${inviteLink}`);
@@ -528,34 +592,34 @@ class LobbyManager {
 
   generateGameId(length = 6) {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    return Array.from({ length }, () => 
+    return Array.from({ length }, () =>
       chars.charAt(Math.floor(Math.random() * chars.length))
-    ).join('');
+    ).join("");
   }
 
   showSignupForm() {
-    const signupForm = document.getElementById('signup-form');
-    const loginForm = document.getElementById('login-form');
-    const userTextEl = document.getElementById('user-text');
-    
-    if (signupForm) signupForm.style.display = 'block';
-    if (loginForm) loginForm.style.display = 'none';
-    
+    const signupForm = document.getElementById("signup-form");
+    const loginForm = document.getElementById("login-form");
+    const userTextEl = document.getElementById("user-text");
+
+    if (signupForm) signupForm.style.display = "block";
+    if (loginForm) loginForm.style.display = "none";
+
     // Preserve username if it exists
-    const usernameEl = document.getElementById('username');
+    const usernameEl = document.getElementById("username");
     if (usernameEl && usernameEl.innerHTML && userTextEl) {
       userTextEl.value = usernameEl.innerHTML;
     }
   }
 
   showLoginForm() {
-    document.getElementById('signup-form').style.display = 'none';
-    document.getElementById('login-form').style.display = 'block';
+    document.getElementById("signup-form").style.display = "none";
+    document.getElementById("login-form").style.display = "block";
   }
 
   showUpgradeForm() {
-    document.getElementById('join-create-game').style.display = 'none';
-    document.getElementById('upgrade-form').style.display = 'block';
+    document.getElementById("join-create-game").style.display = "none";
+    document.getElementById("upgrade-form").style.display = "block";
   }
 
   async signUp() {
@@ -568,36 +632,36 @@ class LobbyManager {
       } else {
         await this.auth.signUp(email, password, username);
       }
-      
+
       // Ensure username is set in the UI
       const user = this.auth.auth.currentUser;
       if (user && username) {
         await this.auth.setUsername(username);
       }
-      
+
       this.hideAuthForms();
     } catch (error) {
-      document.getElementById('signup-error').innerHTML = error.message;
+      document.getElementById("signup-error").innerHTML = error.message;
     }
   }
 
   getSignupFormData() {
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-    const username = document.getElementById('user-text').value;
-    const errorElement = document.getElementById('signup-error');
+    const email = document.getElementById("signup-email").value;
+    const password = document.getElementById("signup-password").value;
+    const username = document.getElementById("user-text").value;
+    const errorElement = document.getElementById("signup-error");
 
     if (!email || !password || !username) {
-      errorElement.innerHTML = 'Please fill in all fields';
+      errorElement.innerHTML = "Please fill in all fields";
       return { isValid: false };
     }
 
     if (password.length < 6) {
-      errorElement.innerHTML = 'Password must be at least 6 characters long';
+      errorElement.innerHTML = "Password must be at least 6 characters long";
       return { isValid: false };
     }
 
-    errorElement.innerHTML = ''; // Clear any previous errors
+    errorElement.innerHTML = ""; // Clear any previous errors
     return { email, password, username, isValid: true };
   }
 
@@ -609,17 +673,17 @@ class LobbyManager {
       await this.auth.login(email, password);
       this.hideAuthForms();
     } catch (error) {
-      document.getElementById('login-error').innerHTML = error.message;
+      document.getElementById("login-error").innerHTML = error.message;
     }
   }
 
   getLoginFormData() {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    const errorElement = document.getElementById('login-error');
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+    const errorElement = document.getElementById("login-error");
 
     if (!email || !password) {
-      errorElement.innerHTML = 'Please fill in all fields';
+      errorElement.innerHTML = "Please fill in all fields";
       return { isValid: false };
     }
 
@@ -627,14 +691,18 @@ class LobbyManager {
   }
 
   hideAuthForms() {
-    document.getElementById('signup-form').style.display = 'none';
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('create-username').style.display = 'none';
-    document.getElementById('join-create-game').style.display = '';
+    document.getElementById("signup-form").style.display = "none";
+    document.getElementById("login-form").style.display = "none";
+    document.getElementById("create-username").style.display = "none";
+    document.getElementById("join-create-game").style.display = "";
   }
 
   async deleteAccount() {
-    if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete your account? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
@@ -653,7 +721,10 @@ class LobbyManager {
 
   async cleanupUserGames(user) {
     const userGames = await getDocs(
-      query(this.gamesCollection, where("players", "array-contains", { id: user.uid }))
+      query(
+        this.gamesCollection,
+        where("players", "array-contains", { id: user.uid })
+      )
     );
 
     const gameUpdates = userGames.docs.map(async (gameDoc) => {
@@ -661,34 +732,36 @@ class LobbyManager {
       if (gameData.players.length <= 1) {
         return deleteDoc(doc(this.gamesCollection, gameDoc.id));
       }
-      
-      const updatedPlayers = gameData.players.filter(p => p.id !== user.uid);
-      return updateDoc(doc(this.gamesCollection, gameDoc.id), { players: updatedPlayers });
+
+      const updatedPlayers = gameData.players.filter((p) => p.id !== user.uid);
+      return updateDoc(doc(this.gamesCollection, gameDoc.id), {
+        players: updatedPlayers,
+      });
     });
 
     await Promise.all(gameUpdates);
   }
 
   cancelUpgrade() {
-    document.getElementById('join-create-game').style.display = '';
-    document.getElementById('upgrade-form').style.display = 'none';
-    document.getElementById('upgrade-error').innerHTML = '';
-    document.getElementById('upgrade-email').value = '';
-    document.getElementById('upgrade-password').value = '';
+    document.getElementById("join-create-game").style.display = "";
+    document.getElementById("upgrade-form").style.display = "none";
+    document.getElementById("upgrade-error").innerHTML = "";
+    document.getElementById("upgrade-email").value = "";
+    document.getElementById("upgrade-password").value = "";
   }
 
   async upgradeToFullAccount() {
-    const email = document.getElementById('upgrade-email').value;
-    const password = document.getElementById('upgrade-password').value;
-    const errorElement = document.getElementById('upgrade-error');
+    const email = document.getElementById("upgrade-email").value;
+    const password = document.getElementById("upgrade-password").value;
+    const errorElement = document.getElementById("upgrade-error");
 
     if (!email || !password) {
-      errorElement.innerHTML = 'Please fill in all fields';
+      errorElement.innerHTML = "Please fill in all fields";
       return;
     }
 
     if (password.length < 6) {
-      errorElement.innerHTML = 'Password must be at least 6 characters long';
+      errorElement.innerHTML = "Password must be at least 6 characters long";
       return;
     }
 
