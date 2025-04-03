@@ -236,24 +236,24 @@
         </div>
 
         <!-- Sign Up Form -->
-        <div id="signup-form" class="auth-form">
+        <form id="signup-form" class="auth-form">
           <p class="info-text">Save your progress across devices</p>
-          <input type="email" id="signup-email" class="input-field" placeholder="Email">
-          <input type="password" id="signup-password" class="input-field" placeholder="Password">
+          <input type="email" autocomplete="email" id="signup-email" class="input-field" placeholder="Email">
+          <input type="password" autocomplete="current-password" id="signup-password" class="input-field" placeholder="Password">
           <button class="btn" onclick="lobbyManager.signUp()">Create Account</button>
           <p id="signup-error" class="error-text"></p>
           <button class="link-button" onclick="lobbyManager.showLoginForm()">Already have an account? Login</button>
-        </div>
+        </form>
 
         <!-- Login Form -->
-        <div id="login-form" class="auth-form">
+        <form id="login-form" class="auth-form">
           <p class="info-text">Welcome back! Please login to continue</p>
-          <input type="email" id="login-email" class="input-field" placeholder="Email">
-          <input type="password" id="login-password" class="input-field" placeholder="Password">
+          <input type="email" autocomplete="email" id="login-email" class="input-field" placeholder="Email">
+          <input type="password" autocomplete="current-password" id="login-password" class="input-field" placeholder="Password">
           <button class="btn" onclick="lobbyManager.login()">Login</button>
           <p id="login-error" class="error-text"></p>
           <button class="link-button" onclick="lobbyManager.showSignupForm()">Need an account? Sign up</button>
-        </div>
+        </form>
       </div>
 
       <!-- Game Options -->
@@ -271,15 +271,15 @@
       </div>
 
       <!-- Upgrade Account Form -->
-      <div id="upgrade-form" class="auth-form card" style="display: none;">
+      <form id="upgrade-form" class="auth-form card" style="display: none;">
         <h2>Save Your Progress</h2>
         <p class="info-text">Create an account to save your progress and play from any device</p>
-        <input type="email" id="upgrade-email" class="input-field" placeholder="Email">
-        <input type="password" id="upgrade-password" class="input-field" placeholder="Password">
+        <input type="email" autocomplete="email" id="upgrade-email" class="input-field" placeholder="Email">
+        <input type="password" autocomplete="current-password" id="upgrade-password" class="input-field" placeholder="Password">
         <button class="btn" onclick="lobbyManager.upgradeToFullAccount()">Save Progress</button>
         <p id="upgrade-error" class="error-text"></p>
         <button class="link-button" onclick="lobbyManager.cancelUpgrade()">Cancel</button>
-      </div>
+      </form>
 
       <!-- Active Games List -->
       <div class="games-container">

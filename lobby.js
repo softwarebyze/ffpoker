@@ -54,7 +54,7 @@ class AuthManager {
       const initialUser = await new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(this.auth, (user) => {
           console.log(
-            "Initial auth state:",
+            "Initial auth state (display name, is anonymous):",
             user?.displayName,
             user?.isAnonymous
           );
@@ -73,7 +73,11 @@ class AuthManager {
   }
 
   async handleAuthStateChanged(user) {
-    console.log("Auth state changed:", user?.displayName, user?.isAnonymous);
+    console.log(
+      "Auth state changed (display name, is anonymous):",
+      user?.displayName,
+      user?.isAnonymous
+    );
 
     if (!user) {
       if (!this.auth.currentUser) {
