@@ -43,54 +43,61 @@ let teams = []; // Declare teams array globally, fill it from json of teams that
 
 // Function to get the current NFL week
 function getNFLWeek() {
-    const seasonStart = new Date(Date.UTC(2024, 8, 8, 5, 0, 0)); // September 8, 2024, at 10 PM Pacific (converted to UTC)
-    const now = new Date();
+  const seasonStart = new Date(Date.UTC(2024, 8, 8, 5, 0, 0)); // September 8, 2024, at 10 PM Pacific (converted to UTC)
+  const now = new Date();
 
-    // Calculate the difference in time (milliseconds)
-    let diff = now - seasonStart;
+  // Calculate the difference in time (milliseconds)
+  let diff = now - seasonStart;
 
-    // Convert milliseconds to weeks (1 week = 7 days = 7 * 24 * 60 * 60 * 1000 ms)
-    const msInWeek = 7 * 24 * 60 * 60 * 1000;
+  // Convert milliseconds to weeks (1 week = 7 days = 7 * 24 * 60 * 60 * 1000 ms)
+  const msInWeek = 7 * 24 * 60 * 60 * 1000;
 
-    // Get the week number by dividing the time difference by msInWeek
-    let week = Math.floor(diff / msInWeek) + 2;
+  // Get the week number by dividing the time difference by msInWeek
+  let week = Math.floor(diff / msInWeek) + 2;
 
-    // If it's Sunday after 10 PM Pacific, move to the next week
-    if (now.getUTCDay() === 0 && now.getUTCHours() >= 5) {
-        week += 1;
-    }
-    // Ensure we don't go out of bounds
-    if (week > 18) {
-        week = 18;
-    } else if (week < 1) {
-        week = 1;
-    }
-    return week;
+  // If it's Sunday after 10 PM Pacific, move to the next week
+  if (now.getUTCDay() === 0 && now.getUTCHours() >= 5) {
+    week += 1;
+  }
+  // Ensure we don't go out of bounds
+  if (week > 18) {
+    week = 18;
+  } else if (week < 1) {
+    week = 1;
+  }
+  return week;
 }
 
 // Function to load the corresponding teams based on the current NFL week
 async function loadTeams() {
-    const week = getNFLWeek();
+  const week = getNFLWeek();
 
-    // Fetch json
-    const response = await fetch("sundays_nfl_schedule_2024.json");
+  // Fetch json
+  const response = await fetch("sundays_nfl_schedule_2024.json");
 
-    // Check if the response is ok
-    if (!response.ok) {
-        // Return a default set of teams if fetching fails
-        return ["Detroit Lions", "Dallas Cowboys", "Denver Broncos", "Philadelphia Eagles", "New York Giants", "Washington Commanders"];
-    }
+  // Check if the response is ok
+  if (!response.ok) {
+    // Return a default set of teams if fetching fails
+    return [
+      "Detroit Lions",
+      "Dallas Cowboys",
+      "Denver Broncos",
+      "Philadelphia Eagles",
+      "New York Giants",
+      "Washington Commanders",
+    ];
+  }
 
-    const schedule = await response.json();
+  const schedule = await response.json();
 
-    // Get the teams for the current week
-    const teams = schedule[`Week ${week}`];
-    return teams;
+  // Get the teams for the current week
+  const teams = schedule[`Week ${week}`];
+  return teams;
 }
 
 async function initializeTeams() {
-    teams = await loadTeams();
-    console.log("Teams array populated:", teams);
+  teams = await loadTeams();
+  console.log("Teams array populated:", teams);
 }
 
 // Call the initialization function
@@ -150,7 +157,7 @@ let gameState;
 setPersistence(auth, browserSessionPersistence);
 
 // Initialize anonymous auth
-signInAnonymously(auth).catch(error => {
+signInAnonymously(auth).catch((error) => {
   console.error("Error signing in anonymously:", error);
 });
 
@@ -172,7 +179,9 @@ async function handleAuthStateChange(user) {
 }
 
 function redirectToUsername() {
-  location.replace(`${window.location.origin}/username${window.location.search}`);
+  location.replace(
+    `${window.location.origin}/username${window.location.search}`
+  );
 }
 
 async function initializeAuthenticatedUser(user) {
@@ -224,7 +233,7 @@ function updatePlayerNumber() {
   const players = gameState.players;
   if (!players) return;
 
-  const playerIndex = players.findIndex(p => p.id === playerId);
+  const playerIndex = players.findIndex((p) => p.id === playerId);
   if (playerIndex === -1) return;
 
   const newPlayerIndex = playerIndex + 1;
@@ -280,11 +289,10 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
-
 });
 
 async function resetGame() {
-  const oldNumPlayers = gameState.players.length
+  const oldNumPlayers = gameState.players.length;
   deleteGame(gameId);
   await loadTeamData();
   await loadInitialGameState();
@@ -361,8 +369,8 @@ async function joinGame() {
   document.getElementById("player-number").innerHTML = newPlayerIndex;
 
   //if (gameState.players.length == numPlayers) {
-    // When the final person joins, automatically start the game
-    //await startGame();
+  // When the final person joins, automatically start the game
+  //await startGame();
   //}
 }
 
@@ -383,7 +391,7 @@ function startGame() {
 
   gameState.status = "active";
   gameState.players = updatedPlayers;
-  numPlayers = gameState.players.length
+  numPlayers = gameState.players.length;
   gameState.drawnPositions = [];
   gameState.currentPlayer = 0;
   gameState.pot = numPlayers * 10;
@@ -700,9 +708,11 @@ function playerFold() {
 function nextPlayer() {
   const { players } = gameState;
 
-  let updatedCurrentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
+  let updatedCurrentPlayer =
+    (gameState.currentPlayer + 1) % gameState.players.length;
   while (!players[updatedCurrentPlayer].inGame) {
-    updatedCurrentPlayer = (updatedCurrentPlayer + 1) % gameState.players.length;
+    updatedCurrentPlayer =
+      (updatedCurrentPlayer + 1) % gameState.players.length;
   }
 
   updateDoc(gameRef, {

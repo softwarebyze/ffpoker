@@ -1,297 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fantasy Football Texas Hold'em</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
-    <style>
-      @font-face {
-        font-family: 'Freshman';
-        src: url('Freshman.ttf') format('truetype');
-      }
 
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        background-color: #013220;
-        color: white;
-        margin: 20px;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fantasy Football Texas Hold'em</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+  <style>
+    @font-face {
+      font-family: 'Freshman';
+      src: url('Freshman.ttf') format('truetype');
+    }
 
-      h1, h2 {
-        font-family: 'Freshman', Arial, sans-serif;
-        -webkit-text-stroke: 0.2px black;
-        letter-spacing: -1px;
-        color: white;
-      }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #013220;
+      color: white;
+      margin: 20px;
+    }
 
-      .header h1 {
-        margin-bottom: 20px;
-      }
+    h1,
+    h2 {
+      font-family: 'Freshman', Arial, sans-serif;
+      -webkit-text-stroke: 0.2px black;
+      letter-spacing: -1px;
+      color: white;
+    }
 
-      .container {
-        max-width: 800px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-      }
+    .header h1 {
+      margin-bottom: 20px;
+    }
 
-      .card {
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 8px;
-        padding: 2rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        margin-bottom: 1rem;
-      }
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
 
-      .card h2, .card p {
-        color: white;
-        margin: 10px 0;
-      }
+    .card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      margin-bottom: 1rem;
+    }
 
-      .btn {
-        background: #4CAF50;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        font-family: 'Freshman', Arial, sans-serif;
-        -webkit-text-stroke: 0.2px black;
-      }
+    .card h2,
+    .card p {
+      color: white;
+      margin: 10px 0;
+    }
 
-      .btn:hover {
-        background: #45a049;
-      }
+    .btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: 'Freshman', Arial, sans-serif;
+      -webkit-text-stroke: 0.2px black;
+    }
 
-      .input-field {
-        padding: 8px;
-        margin: 5px 0;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 4px;
-        font-size: 16px;
-        background: rgba(0, 0, 0, 0.2);
-        color: white;
-        width: 200px;
-      }
+    .btn:hover {
+      background: #45a049;
+    }
 
-      .input-field::placeholder {
-        color: rgba(255, 255, 255, 0.6);
-      }
+    .input-field {
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      font-size: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      color: white;
+      width: 200px;
+    }
 
-      .error-text {
-        color: #ff6b6b;
-        margin: 5px 0;
-      }
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
 
-      .btn-group {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-        justify-content: center;
-      }
+    .error-text {
+      color: #ff6b6b;
+      margin: 5px 0;
+    }
 
-      .games-container {
-        margin-top: 2rem;
-      }
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      justify-content: center;
+    }
 
-      .games-header h2 {
-        color: white;
-        margin-bottom: 1rem;
-      }
+    .games-container {
+      margin-top: 2rem;
+    }
 
-      .game-list {
-        display: grid;
-        gap: 10px;
-        margin: 20px 0;
-      }
+    .games-header h2 {
+      color: white;
+      margin-bottom: 1rem;
+    }
 
-      .game-item {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
+    .game-list {
+      display: grid;
+      gap: 10px;
+      margin: 20px 0;
+    }
 
-      .game-item h3 {
-        font-family: 'Freshman', Arial, sans-serif;
-        color: white;
-        -webkit-text-stroke: 0.2px black;
-        margin: 0;
-      }
+    .game-item {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-      .game-item p {
-        color: white;
-        margin: 5px 0;
-      }
+    .game-item h3 {
+      font-family: 'Freshman', Arial, sans-serif;
+      color: white;
+      -webkit-text-stroke: 0.2px black;
+      margin: 0;
+    }
 
-      .game-status {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+    .game-item p {
+      color: white;
+      margin: 5px 0;
+    }
 
-      .game-status span {
-        color: white;
-      }
+    .game-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-      .game-item.your-game {
-        border: 2px solid #4CAF50;
-      }
+    .game-status span {
+      color: white;
+    }
 
-      .game-item.your-turn {
-        border: 2px dashed yellow;
-      }
+    .game-item.your-game {
+      border: 2px solid #4CAF50;
+    }
 
-      .status-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-      }
+    .game-item.your-turn {
+      border: 2px dashed yellow;
+    }
 
-      .status-indicator.active {
-        background: #4CAF50;
-      }
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
 
-      .status-indicator.waiting {
-        background: #ffd700;
-      }
+    .status-indicator.active {
+      background: #4CAF50;
+    }
 
-      #username {
-        color: #4CAF50;
-        font-weight: 500;
-        font-family: 'Freshman', Arial, sans-serif;
-        -webkit-text-stroke: 0.2px black;
-      }
+    .status-indicator.waiting {
+      background: #ffd700;
+    }
 
-      .auth-options {
-        margin-top: 10px;
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-      }
+    #username {
+      color: #4CAF50;
+      font-weight: 500;
+      font-family: 'Freshman', Arial, sans-serif;
+      -webkit-text-stroke: 0.2px black;
+    }
 
-      .auth-form {
-        display: none;
-        margin-top: 15px;
-        background: rgba(0, 0, 0, 0.2);
-        padding: 20px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
+    .auth-options {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
 
-      .auth-form input {
-        width: calc(100% - 20px);
-        margin-bottom: 12px;
-      }
+    .auth-form {
+      display: none;
+      margin-top: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-      .auth-form .btn {
-        width: 100%;
-        margin-bottom: 15px;
-      }
+    .auth-form input {
+      width: calc(100% - 20px);
+      margin-bottom: 12px;
+    }
 
-      .auth-form .link-button {
-        font-size: 0.9rem;
-      }
+    .auth-form .btn {
+      width: 100%;
+      margin-bottom: 15px;
+    }
 
-      .link-button {
-        background: none;
-        border: none;
-        color: #4CAF50;
-        text-decoration: underline;
-        cursor: pointer;
-        padding: 0;
-        font: inherit;
-      }
+    .auth-form .link-button {
+      font-size: 0.9rem;
+    }
 
-      .info-text {
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 0.9rem;
-        margin-bottom: 15px;
-      }
-    </style>
-  </head>
+    .link-button {
+      background: none;
+      border: none;
+      color: #4CAF50;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+      font: inherit;
+    }
 
-  <body>
-    <h1>Fantasy Football Texas Hold'em</h1>
+    .info-text {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
 
-    <div class="container">
-      <!-- Username Creation -->
-      <div id="create-username" class="card">
-        <h2>Welcome!</h2>
-        <p>Choose a username to start playing:</p>
-        <input type="text" id="user-text" class="input-field" placeholder="Enter username">
-        <p id="error-text" class="error-text"></p>
-        <button class="btn" onclick="lobbyManager.addUsername()">Start Playing</button>
-        
-        <div class="auth-options">
-          <button class="link-button" onclick="lobbyManager.showSignupForm()">Create Account</button>
-          <span>|</span>
-          <button class="link-button" onclick="lobbyManager.showLoginForm()">Login</button>
-        </div>
+<body>
+  <h1>Fantasy Football Texas Hold'em</h1>
 
-        <!-- Sign Up Form -->
-        <form id="signup-form" class="auth-form">
-          <p class="info-text">Save your progress across devices</p>
-          <input type="email" autocomplete="email" id="signup-email" class="input-field" placeholder="Email">
-          <input type="password" autocomplete="current-password" id="signup-password" class="input-field" placeholder="Password">
-          <button class="btn" onclick="lobbyManager.signUp()">Create Account</button>
-          <p id="signup-error" class="error-text"></p>
-          <button class="link-button" onclick="lobbyManager.showLoginForm()">Already have an account? Login</button>
-        </form>
+  <div class="container">
+    <!-- Username Creation -->
+    <div id="create-username" class="card">
+      <h2>Welcome!</h2>
+      <p>Choose a username to start playing:</p>
+      <input type="text" id="user-text" class="input-field" placeholder="Enter username">
+      <p id="error-text" class="error-text"></p>
+      <button class="btn" onclick="lobbyManager.addUsername()">Start Playing</button>
 
-        <!-- Login Form -->
-        <form id="login-form" class="auth-form">
-          <p class="info-text">Welcome back! Please login to continue</p>
-          <input type="email" autocomplete="email" id="login-email" class="input-field" placeholder="Email">
-          <input type="password" autocomplete="current-password" id="login-password" class="input-field" placeholder="Password">
-          <button class="btn" onclick="lobbyManager.login()">Login</button>
-          <p id="login-error" class="error-text"></p>
-          <button class="link-button" onclick="lobbyManager.showSignupForm()">Need an account? Sign up</button>
-        </form>
+      <div class="auth-options">
+        <button class="link-button" onclick="lobbyManager.showSignupForm()">Create Account</button>
+        <span>|</span>
+        <button class="link-button" onclick="lobbyManager.showLoginForm()">Login</button>
       </div>
 
-      <!-- Game Options -->
-      <div id="join-create-game" class="card" style="display: none;">
-        <h2>Welcome, <span id="username"></span>!</h2>
-        <div class="btn-group">
-          <button class="btn" onclick="lobbyManager.joinOrCreateRandomGame()">Quick Join</button>
-          <button class="btn" onclick="lobbyManager.createPrivateGame()">Create Private Game</button>
-        </div>
-        <div class="auth-options" style="margin-top: 20px;">
-          <button id="save-progress-btn" class="link-button" onclick="lobbyManager.showUpgradeForm()">Save Progress</button>
-          <button class="link-button" onclick="lobbyManager.logout()">Log Out</button>
-          <button class="link-button" style="color: #ff6b6b;" onclick="lobbyManager.deleteAccount()">Delete Account</button>
-        </div>
-      </div>
-
-      <!-- Upgrade Account Form -->
-      <form id="upgrade-form" class="auth-form card" style="display: none;">
-        <h2>Save Your Progress</h2>
-        <p class="info-text">Create an account to save your progress and play from any device</p>
-        <input type="email" autocomplete="email" id="upgrade-email" class="input-field" placeholder="Email">
-        <input type="password" autocomplete="current-password" id="upgrade-password" class="input-field" placeholder="Password">
-        <button class="btn" onclick="lobbyManager.upgradeToFullAccount()">Save Progress</button>
-        <p id="upgrade-error" class="error-text"></p>
-        <button class="link-button" onclick="lobbyManager.cancelUpgrade()">Cancel</button>
+      <!-- Sign Up Form -->
+      <form id="signup-form" class="auth-form">
+        <p class="info-text">Save your progress across devices</p>
+        <input type="email" autocomplete="email" id="signup-email" class="input-field" placeholder="Email">
+        <input type="password" autocomplete="current-password" id="signup-password" class="input-field"
+          placeholder="Password">
+        <button class="btn" onclick="lobbyManager.signUp()">Create Account</button>
+        <p id="signup-error" class="error-text"></p>
+        <button class="link-button" onclick="lobbyManager.showLoginForm()">Already have an account? Login</button>
       </form>
 
-      <!-- Active Games List -->
-      <div class="games-container">
-        <div class="games-header">
-          <h2>Active Games</h2>
-        </div>
-        <div id="games-list" class="game-list">
-          <!-- Games will be populated here -->
-        </div>
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form">
+        <p class="info-text">Welcome back! Please login to continue</p>
+        <input type="email" autocomplete="email" id="login-email" class="input-field" placeholder="Email">
+        <input type="password" autocomplete="current-password" id="login-password" class="input-field"
+          placeholder="Password">
+        <button class="btn" onclick="lobbyManager.login()">Login</button>
+        <p id="login-error" class="error-text"></p>
+        <button class="link-button" onclick="lobbyManager.showSignupForm()">Need an account? Sign up</button>
+      </form>
+    </div>
+
+    <!-- Game Options -->
+    <div id="join-create-game" class="card" style="display: none;">
+      <h2>Welcome, <span id="username"></span>!</h2>
+      <div class="btn-group">
+        <button class="btn" onclick="lobbyManager.joinOrCreateRandomGame()">Quick Join</button>
+        <button class="btn" onclick="lobbyManager.createPrivateGame()">Create Private Game</button>
+      </div>
+      <div class="auth-options" style="margin-top: 20px;">
+        <button id="save-progress-btn" class="link-button" onclick="lobbyManager.showUpgradeForm()">Save
+          Progress</button>
+        <button class="link-button" onclick="lobbyManager.logout()">Log Out</button>
+        <button class="link-button" style="color: #ff6b6b;" onclick="lobbyManager.deleteAccount()">Delete
+          Account</button>
       </div>
     </div>
 
-    <script type="module" src="lobby.js"></script>
-  </body>
+    <!-- Upgrade Account Form -->
+    <form id="upgrade-form" class="auth-form card" style="display: none;">
+      <h2>Save Your Progress</h2>
+      <p class="info-text">Create an account to save your progress and play from any device</p>
+      <input type="email" autocomplete="email" id="upgrade-email" class="input-field" placeholder="Email">
+      <input type="password" autocomplete="current-password" id="upgrade-password" class="input-field"
+        placeholder="Password">
+      <button class="btn" onclick="lobbyManager.upgradeToFullAccount()">Save Progress</button>
+      <p id="upgrade-error" class="error-text"></p>
+      <button class="link-button" onclick="lobbyManager.cancelUpgrade()">Cancel</button>
+    </form>
+
+    <!-- Active Games List -->
+    <div class="games-container">
+      <div class="games-header">
+        <h2>Active Games</h2>
+      </div>
+      <div id="games-list" class="game-list">
+        <!-- Games will be populated here -->
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="lobby.js"></script>
+</body>
+
 </html>
