@@ -311,7 +311,28 @@ function scheduleBotTurn() {
   if (status === "active" && bot.isBot && !actions[currentPlayer]) {
     setTimeout(() => {
       console.log(`🤖 ${bot.username} calling...`);
-      playerCheck();
+      // Randomly decide bot action: check/call (60%), fold (20%), or raise (20%)
+      const action = Math.random(); // 0-1
+      console.log(`🤖 ${bot.username} action: ${action} (check/call (60%), fold (20%), or raise (20%))`);
+      if (action < 0.6) {
+        // Check or call depending on the current game state
+        if (gameState.currentBet === bot.bet) {
+          playerCheck();
+        } else {
+          playerCall();
+        }
+      } else if (action < 0.8) {
+        playerFold();
+      } else {
+        // For raise, set a random amount between min and max
+        if (bot.chips > 0) {
+          document.getElementById("raiseRange").value = Math.floor(Math.random() * bot.chips) + 1;
+          updateRaiseAmount();
+          playerRaise();
+        } else {
+          playerCheck(); // Fallback if no chips to raise
+        }
+      }
     }, timeoutLength);
   }
 }
