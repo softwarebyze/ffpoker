@@ -324,7 +324,11 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
-  scheduleBotTurn();
+  const searchParams = new URLSearchParams(window.location.search);
+  const nBots = searchParams.get("nBots");
+  if (nBots > 0) {
+    scheduleBotTurn();
+  }
 });
 
 async function resetGame() {
