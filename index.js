@@ -140,7 +140,7 @@ function getGameId() {
 
   if (!searchParams.has("gameId") || searchParams.get("gameId") == "") {
     console.log("gameId is not provided");
-    return "tempCode";
+    return location.replace(`/`);
   } else {
     return searchParams.get("gameId");
   }
