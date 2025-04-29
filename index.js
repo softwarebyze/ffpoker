@@ -249,6 +249,17 @@ async function loadInitialGameState() {
   } else {
     // docSnap.data() will be undefined in this case
     console.log("No such document!");
+    const nBots = new URLSearchParams(window.location.search).get("nBots");
+    const botPlayers = Array.from({ length: nBots }, (_, i) => ({
+      username: `Bot ${i + 1}`,
+      isBot: true,
+      inGame: true,
+      id: `bot-${i}`,
+      team: teams[i % teams.length],
+      bet: 10,
+      score: 0,
+      chips: 40,
+    }));
     const initialGameState = {
       initialChips: 50,
       actions: [false, false, false, false],
@@ -258,7 +269,9 @@ async function loadInitialGameState() {
       status: "awaitingPlayers",
       pot: 0,
       players: [
+        ...botPlayers,
         // {
+        //     "isBot": false,
         //     "inGame": true,
         //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
         //     "team": "Dallas Cowboys",
@@ -280,6 +293,21 @@ async function loadInitialGameState() {
   }
 }
 
+function scheduleBotTurn() {
+  const { players, currentPlayer, actions, status } = gameState;
+  const bot = players[currentPlayer];
+  if (
+    status === "active" &&
+    bot.isBot &&
+    !actions[currentPlayer]
+  ) {
+    setTimeout(() => {
+      console.log(`🤖 ${bot.username} calling...`);
+      playerCheck();
+    }, 800);
+  }
+}
+
 onSnapshot(doc(db, "games", gameId), (doc) => {
   gameState = doc.data();
   console.log("Current data: ", doc.data());
@@ -289,6 +317,7 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
+  scheduleBotTurn();
 });
 
 async function resetGame() {
