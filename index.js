@@ -307,11 +307,12 @@ async function loadInitialGameState() {
 function scheduleBotTurn() {
   const { players, currentPlayer, actions, status } = gameState;
   const bot = players[currentPlayer];
+  const timeoutLength = Math.floor(Math.random() * 7000) + 1000; // 1-8s
   if (status === "active" && bot.isBot && !actions[currentPlayer]) {
     setTimeout(() => {
       console.log(`🤖 ${bot.username} calling...`);
       playerCheck();
-    }, 800);
+    }, timeoutLength);
   }
 }
 
