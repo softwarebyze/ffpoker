@@ -240,6 +240,15 @@ function updatePlayerNumber() {
   document.getElementById("player-number").innerHTML = newPlayerIndex;
 }
 
+async function generateFakeUsername() {
+  const response = await fetch("bot_usernames.json");
+  const data = await response.json();
+  const adjective =
+    data.adjectives[Math.floor(Math.random() * data.adjectives.length)];
+  const noun = data.nouns[Math.floor(Math.random() * data.nouns.length)];
+  return `${adjective}${noun}`;
+}
+
 async function loadInitialGameState() {
   gameRef = doc(db, "games", gameId);
   const gameSnapshot = await getDoc(gameRef);
@@ -250,16 +259,18 @@ async function loadInitialGameState() {
     // docSnap.data() will be undefined in this case
     console.log("No such document!");
     const nBots = new URLSearchParams(window.location.search).get("nBots");
-    const botPlayers = Array.from({ length: nBots }, (_, i) => ({
-      username: `Bot ${i + 1}`,
-      isBot: true,
-      inGame: true,
-      id: `bot-${i}`,
-      team: teams[i % teams.length],
-      bet: 10,
-      score: 0,
-      chips: 40,
-    }));
+    const botPlayers = await Promise.all(
+      Array.from({ length: nBots }, async (_, i) => ({
+        username: await generateFakeUsername(),
+        isBot: true,
+        inGame: true,
+        id: `bot-${i}`,
+        team: teams[i % teams.length],
+        bet: 10,
+        score: 0,
+        chips: 40,
+      }))
+    );
     const initialGameState = {
       initialChips: 50,
       actions: [false, false, false, false],
@@ -296,11 +307,7 @@ async function loadInitialGameState() {
 function scheduleBotTurn() {
   const { players, currentPlayer, actions, status } = gameState;
   const bot = players[currentPlayer];
-  if (
-    status === "active" &&
-    bot.isBot &&
-    !actions[currentPlayer]
-  ) {
+  if (status === "active" && bot.isBot && !actions[currentPlayer]) {
     setTimeout(() => {
       console.log(`🤖 ${bot.username} calling...`);
       playerCheck();
