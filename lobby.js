@@ -574,12 +574,14 @@ class LobbyManager {
 
   async createPrivateGame() {
     const gameId = this.generateGameId();
+    const nBots = document.getElementById("nBots").value;
     const inviteLink = `${window.location.origin}/ffpoker?gameId=${gameId}`;
+    const newGameLink = inviteLink + `&nBots=${nBots}`;
 
     try {
       await navigator.clipboard.writeText(inviteLink);
       alert(`Copied invite link: ${inviteLink}`);
-      this.redirectToGame(gameId);
+      location.assign(newGameLink);
     } catch (error) {
       console.error("Error creating private game:", error);
       alert("Error creating game. Please try again.");

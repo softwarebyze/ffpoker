@@ -54,8 +54,11 @@ async function addUsername() {
     });
     document.getElementById("error-text").innerHTML = "";
     const gameId = getGameId();
-
-    location.replace(`/ffpoker?gameId=${gameId}`);
+    if (gameId) {
+      location.replace(`/ffpoker?gameId=${gameId}`);
+    } else {
+      location.replace(`/`);
+    }
   }
 }
 

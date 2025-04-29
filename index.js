@@ -140,7 +140,7 @@ function getGameId() {
 
   if (!searchParams.has("gameId") || searchParams.get("gameId") == "") {
     console.log("gameId is not provided");
-    return "tempCode";
+    return location.replace(`/`);
   } else {
     return searchParams.get("gameId");
   }
@@ -240,6 +240,15 @@ function updatePlayerNumber() {
   document.getElementById("player-number").innerHTML = newPlayerIndex;
 }
 
+async function generateFakeUsername() {
+  const response = await fetch("bot_usernames.json");
+  const data = await response.json();
+  const adjective =
+    data.adjectives[Math.floor(Math.random() * data.adjectives.length)];
+  const noun = data.nouns[Math.floor(Math.random() * data.nouns.length)];
+  return `${adjective}${noun}`;
+}
+
 async function loadInitialGameState() {
   gameRef = doc(db, "games", gameId);
   const gameSnapshot = await getDoc(gameRef);
@@ -249,6 +258,19 @@ async function loadInitialGameState() {
   } else {
     // docSnap.data() will be undefined in this case
     console.log("No such document!");
+    const nBots = new URLSearchParams(window.location.search).get("nBots");
+    const botPlayers = await Promise.all(
+      Array.from({ length: nBots }, async (_, i) => ({
+        username: await generateFakeUsername(),
+        isBot: true,
+        inGame: true,
+        id: `bot-${i}`,
+        team: teams[i % teams.length],
+        bet: 10,
+        score: 0,
+        chips: 40,
+      }))
+    );
     const initialGameState = {
       initialChips: 50,
       actions: [false, false, false, false],
@@ -258,7 +280,9 @@ async function loadInitialGameState() {
       status: "awaitingPlayers",
       pot: 0,
       players: [
+        ...botPlayers,
         // {
+        //     "isBot": false,
         //     "inGame": true,
         //     "id": "m24dnjfFmqNpbKqRT07Rvhoj1j12",
         //     "team": "Dallas Cowboys",
@@ -280,6 +304,39 @@ async function loadInitialGameState() {
   }
 }
 
+function scheduleBotTurn() {
+  const { players, currentPlayer, actions, status } = gameState;
+  const bot = players[currentPlayer];
+  const timeoutLength = Math.floor(Math.random() * 7000) + 1000; // 1-8s
+  if (status === "active" && bot.isBot && !actions[currentPlayer]) {
+    setTimeout(() => {
+      console.log(`🤖 ${bot.username} calling...`);
+      // Randomly decide bot action: check/call (60%), fold (20%), or raise (20%)
+      const action = Math.random(); // 0-1
+      console.log(`🤖 ${bot.username} action: ${action} (check/call (60%), fold (20%), or raise (20%))`);
+      if (action < 0.6) {
+        // Check or call depending on the current game state
+        if (gameState.currentBet === bot.bet) {
+          playerCheck();
+        } else {
+          playerCall();
+        }
+      } else if (action < 0.8) {
+        playerFold();
+      } else {
+        // For raise, set a random amount between min and max
+        if (bot.chips > 0) {
+          document.getElementById("raiseRange").value = Math.floor(Math.random() * bot.chips) + 1;
+          updateRaiseAmount();
+          playerRaise();
+        } else {
+          playerCheck(); // Fallback if no chips to raise
+        }
+      }
+    }, timeoutLength);
+  }
+}
+
 onSnapshot(doc(db, "games", gameId), (doc) => {
   gameState = doc.data();
   console.log("Current data: ", doc.data());
@@ -289,6 +346,11 @@ onSnapshot(doc(db, "games", gameId), (doc) => {
   updatePlayerActions();
   updatePotDisplay();
   updateUI();
+  const searchParams = new URLSearchParams(window.location.search);
+  const nBots = searchParams.get("nBots");
+  if (nBots > 0) {
+    scheduleBotTurn();
+  }
 });
 
 async function resetGame() {

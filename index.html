@@ -90,6 +90,9 @@
 
     .btn-group {
       display: flex;
+      justify-self: center;
+      flex-direction: column;
+      width: calc(60% - 2rem);
       gap: 1rem;
       margin-top: 1rem;
       justify-content: center;
@@ -266,7 +269,15 @@
       <h2>Welcome, <span id="username"></span>!</h2>
       <div class="btn-group">
         <button class="btn" onclick="lobbyManager.joinOrCreateRandomGame()">Quick Join</button>
-        <button class="btn" onclick="lobbyManager.createPrivateGame()">Create Private Game</button>
+        <div>
+          <select name="nBots" id="nBots">
+            <option value="0">No Bots</option>
+            <option value="1">1 Bot</option>
+            <option value="2">2 Bots</option>
+            <option value="3">3 Bots</option>
+          </select>
+          <button class="btn" onclick="lobbyManager.createPrivateGame()">Create Private Game</button>
+        </div>
       </div>
       <div class="auth-options" style="margin-top: 20px;">
         <button id="save-progress-btn" class="link-button" onclick="lobbyManager.showUpgradeForm()">Save
