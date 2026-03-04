@@ -36,6 +36,350 @@ const firebaseConfig = {
   appId: "1:409640502099:web:d7096f9f32ad152b80d7a6",
 };
 
+const ONBOARDING_COMPLETED_KEY = "ffpoker_lobby_onboarding_v1_completed";
+
+class GuidedOnboarding {
+  constructor() {
+    this.steps = [
+      {
+        title: "Welcome to the lobby",
+        description:
+          "This screen is your home base for creating, joining, and tracking games.",
+        selectors: [".container"],
+      },
+      {
+        title: "Pick a username",
+        description:
+          "Enter a username and click Start Playing. If you're already signed in, your username appears here.",
+        selectors: ["#user-text", "#username"],
+      },
+      {
+        title: "Account options",
+        description:
+          "Create an account or log in to keep progress. Guests can also save progress later.",
+        selectors: ["#create-account-btn", "#save-progress-btn", "#login-btn"],
+      },
+      {
+        title: "Quick Join",
+        description:
+          "Quick Join sends you to an available game immediately so you can start fast.",
+        selectors: ["#quick-join-btn", "#start-playing-btn"],
+      },
+      {
+        title: "Create Private Game",
+        description:
+          "Create a private game, copy the invite link, and share it with friends.",
+        selectors: ["#create-private-game-btn"],
+      },
+      {
+        title: "Active Games",
+        description:
+          "Track open games here. Your turn and your own games are prioritized at the top.",
+        selectors: ["#games-list"],
+      },
+    ];
+    this.active = false;
+    this.currentStepIndex = 0;
+    this.currentTarget = null;
+    this.overlay = null;
+    this.tooltip = null;
+    this.highlightClass = "ff-onboarding-highlight";
+
+    this.addStyles();
+    this.createUI();
+    this.attachGlobalListeners();
+  }
+
+  addStyles() {
+    if (document.getElementById("ff-onboarding-style")) return;
+
+    const style = document.createElement("style");
+    style.id = "ff-onboarding-style";
+    style.textContent = `
+      .ff-onboarding-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 9998;
+        display: none;
+      }
+      .ff-onboarding-tooltip {
+        position: fixed;
+        z-index: 10000;
+        width: min(340px, calc(100vw - 24px));
+        background: #0b2a1d;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        padding: 14px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+        color: white;
+        display: none;
+      }
+      .ff-onboarding-title {
+        margin: 0 0 8px 0;
+        font-size: 1.05rem;
+      }
+      .ff-onboarding-description {
+        margin: 0;
+        line-height: 1.35;
+        color: rgba(255, 255, 255, 0.92);
+      }
+      .ff-onboarding-footer {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .ff-onboarding-progress {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .ff-onboarding-actions {
+        display: flex;
+        gap: 6px;
+      }
+      .ff-onboarding-btn {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.08);
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 6px 10px;
+      }
+      .ff-onboarding-btn.primary {
+        background: #4CAF50;
+        border-color: #4CAF50;
+      }
+      .ff-onboarding-help-btn {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 9997;
+        border: none;
+        border-radius: 18px;
+        padding: 8px 12px;
+        background: #4CAF50;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .ff-onboarding-highlight {
+        position: relative;
+        z-index: 9999;
+        outline: 3px solid #ffd700;
+        outline-offset: 3px;
+        border-radius: 6px;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  createUI() {
+    this.overlay = document.createElement("div");
+    this.overlay.className = "ff-onboarding-overlay";
+
+    this.tooltip = document.createElement("div");
+    this.tooltip.className = "ff-onboarding-tooltip";
+    this.tooltip.innerHTML = `
+      <h3 class="ff-onboarding-title"></h3>
+      <p class="ff-onboarding-description"></p>
+      <div class="ff-onboarding-footer">
+        <span class="ff-onboarding-progress"></span>
+        <div class="ff-onboarding-actions">
+          <button class="ff-onboarding-btn" data-tour-action="back">Back</button>
+          <button class="ff-onboarding-btn" data-tour-action="skip">Skip</button>
+          <button class="ff-onboarding-btn primary" data-tour-action="next">Next</button>
+        </div>
+      </div>
+    `;
+
+    this.helpButton = document.createElement("button");
+    this.helpButton.className = "ff-onboarding-help-btn";
+    this.helpButton.textContent = "Show Tour";
+
+    document.body.appendChild(this.overlay);
+    document.body.appendChild(this.tooltip);
+    document.body.appendChild(this.helpButton);
+
+    this.tooltip
+      .querySelector('[data-tour-action="back"]')
+      .addEventListener("click", () => this.previousStep());
+    this.tooltip
+      .querySelector('[data-tour-action="skip"]')
+      .addEventListener("click", () => this.finish(true));
+    this.helpButton.addEventListener("click", () => this.start(true));
+  }
+
+  attachGlobalListeners() {
+    window.addEventListener("resize", () => {
+      if (this.active) this.renderCurrentStep();
+    });
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (this.active) this.renderCurrentStep();
+      },
+      true
+    );
+    window.addEventListener("ffpoker:ui-updated", () => {
+      if (this.active) {
+        this.renderCurrentStep();
+      }
+    });
+  }
+
+  maybeStart() {
+    if (localStorage.getItem(ONBOARDING_COMPLETED_KEY) === "true") return;
+    this.start();
+  }
+
+  start(force = false) {
+    if (!force && this.active) return;
+    this.clearHighlight();
+    this.active = true;
+    this.currentStepIndex = 0;
+    this.overlay.style.display = "block";
+    this.tooltip.style.display = "block";
+    this.renderCurrentStep();
+  }
+
+  finish(markComplete) {
+    this.active = false;
+    this.overlay.style.display = "none";
+    this.tooltip.style.display = "none";
+    this.clearHighlight();
+    this.currentTarget = null;
+    if (markComplete) {
+      localStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+    }
+  }
+
+  nextStep() {
+    this.currentStepIndex += 1;
+    this.renderCurrentStep();
+  }
+
+  previousStep() {
+    const previousIndex = this.findPreviousVisibleIndex(this.currentStepIndex);
+    if (previousIndex < 0) return;
+    this.currentStepIndex = previousIndex;
+    this.renderCurrentStep();
+  }
+
+  renderCurrentStep() {
+    const resolved = this.resolveVisibleStep(this.currentStepIndex);
+    if (!resolved) {
+      this.finish(true);
+      return;
+    }
+
+    this.currentStepIndex = resolved.index;
+    const { step, target } = resolved;
+    this.currentTarget = target;
+    this.applyHighlight(target);
+
+    const titleEl = this.tooltip.querySelector(".ff-onboarding-title");
+    const descriptionEl = this.tooltip.querySelector(".ff-onboarding-description");
+    const progressEl = this.tooltip.querySelector(".ff-onboarding-progress");
+    const nextBtn = this.tooltip.querySelector('[data-tour-action="next"]');
+    const backBtn = this.tooltip.querySelector('[data-tour-action="back"]');
+
+    titleEl.textContent = step.title;
+    descriptionEl.textContent = step.description;
+    progressEl.textContent = `Step ${resolved.progress} of ${resolved.total}`;
+    nextBtn.textContent = resolved.isLast ? "Done" : "Next";
+    backBtn.disabled = this.findPreviousVisibleIndex(this.currentStepIndex) < 0;
+
+    if (resolved.isLast) {
+      nextBtn.onclick = () => this.finish(true);
+    } else {
+      nextBtn.onclick = () => this.nextStep();
+    }
+
+    this.positionTooltip(target);
+  }
+
+  resolveVisibleStep(startIndex) {
+    const visibleSteps = this.steps
+      .map((step, index) => ({ step, index, target: this.findVisibleTarget(step) }))
+      .filter((entry) => entry.target);
+
+    if (!visibleSteps.length) return null;
+
+    let match =
+      visibleSteps.find((entry) => entry.index >= startIndex) || visibleSteps[0];
+    const progress = visibleSteps.findIndex((entry) => entry.index === match.index) + 1;
+
+    return {
+      step: match.step,
+      index: match.index,
+      target: match.target,
+      progress,
+      total: visibleSteps.length,
+      isLast: progress === visibleSteps.length,
+    };
+  }
+
+  findPreviousVisibleIndex(startIndex) {
+    for (let i = startIndex - 1; i >= 0; i -= 1) {
+      if (this.findVisibleTarget(this.steps[i])) return i;
+    }
+    return -1;
+  }
+
+  findVisibleTarget(step) {
+    for (const selector of step.selectors) {
+      const el = document.querySelector(selector);
+      if (this.isVisible(el)) return el;
+    }
+    return null;
+  }
+
+  isVisible(element) {
+    if (!element) return false;
+    const style = window.getComputedStyle(element);
+    if (
+      style.display === "none" ||
+      style.visibility === "hidden" ||
+      style.opacity === "0"
+    ) {
+      return false;
+    }
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  applyHighlight(target) {
+    this.clearHighlight();
+    target.classList.add(this.highlightClass);
+  }
+
+  clearHighlight() {
+    if (this.currentTarget) {
+      this.currentTarget.classList.remove(this.highlightClass);
+    }
+  }
+
+  positionTooltip(target) {
+    const padding = 12;
+    const rect = target.getBoundingClientRect();
+    const tooltipRect = this.tooltip.getBoundingClientRect();
+
+    let top = rect.bottom + padding;
+    if (top + tooltipRect.height > window.innerHeight - padding) {
+      top = rect.top - tooltipRect.height - padding;
+    }
+    top = Math.max(padding, top);
+
+    let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    left = Math.max(padding, Math.min(left, window.innerWidth - tooltipRect.width - padding));
+
+    this.tooltip.style.top = `${top}px`;
+    this.tooltip.style.left = `${left}px`;
+  }
+}
+
 class AuthManager {
   constructor() {
     this.app = initializeApp(firebaseConfig);
@@ -207,6 +551,7 @@ class AuthManager {
     document.getElementById("create-username").style.display = "";
     document.getElementById("join-create-game").style.display = "none";
     document.getElementById("upgrade-form").style.display = "none";
+    window.dispatchEvent(new Event("ffpoker:ui-updated"));
   }
 
   showAuthenticatedUI(user) {
@@ -228,6 +573,7 @@ class AuthManager {
     if (saveProgressBtn) {
       saveProgressBtn.style.display = user.isAnonymous ? "" : "none";
     }
+    window.dispatchEvent(new Event("ffpoker:ui-updated"));
   }
 }
 
@@ -236,6 +582,7 @@ class LobbyManager {
     this.auth = new AuthManager();
     this.gamesCollection = collection(this.auth.db, "games");
     this.numPlayers = 4;
+    this.onboarding = new GuidedOnboarding();
     this.init();
   }
 
@@ -244,6 +591,7 @@ class LobbyManager {
     this.setupUI();
     this.setupListeners();
     await this.loadActiveGames();
+    this.onboarding.maybeStart();
   }
 
   setupUI() {
@@ -614,16 +962,19 @@ class LobbyManager {
     if (usernameEl && usernameEl.innerHTML && userTextEl) {
       userTextEl.value = usernameEl.innerHTML;
     }
+    window.dispatchEvent(new Event("ffpoker:ui-updated"));
   }
 
   showLoginForm() {
     document.getElementById("signup-form").style.display = "none";
     document.getElementById("login-form").style.display = "block";
+    window.dispatchEvent(new Event("ffpoker:ui-updated"));
   }
 
   showUpgradeForm() {
     document.getElementById("join-create-game").style.display = "none";
     document.getElementById("upgrade-form").style.display = "block";
+    window.dispatchEvent(new Event("ffpoker:ui-updated"));
   }
 
   async signUp() {
@@ -699,6 +1050,7 @@ class LobbyManager {
     document.getElementById("login-form").style.display = "none";
     document.getElementById("create-username").style.display = "none";
     document.getElementById("join-create-game").style.display = "";
+    window.dispatchEvent(new Event("ffpoker:ui-updated"));
   }
 
   async deleteAccount() {
@@ -752,6 +1104,7 @@ class LobbyManager {
     document.getElementById("upgrade-error").innerHTML = "";
     document.getElementById("upgrade-email").value = "";
     document.getElementById("upgrade-password").value = "";
+    window.dispatchEvent(new Event("ffpoker:ui-updated"));
   }
 
   async upgradeToFullAccount() {
