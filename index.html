@@ -230,12 +230,12 @@
       <p>Choose a username to start playing:</p>
       <input type="text" id="user-text" class="input-field" placeholder="Enter username">
       <p id="error-text" class="error-text"></p>
-      <button class="btn" onclick="lobbyManager.addUsername()">Start Playing</button>
+      <button id="start-playing-btn" class="btn" onclick="lobbyManager.addUsername()">Start Playing</button>
 
       <div class="auth-options">
-        <button class="link-button" onclick="lobbyManager.showSignupForm()">Create Account</button>
+        <button id="create-account-btn" class="link-button" onclick="lobbyManager.showSignupForm()">Create Account</button>
         <span>|</span>
-        <button class="link-button" onclick="lobbyManager.showLoginForm()">Login</button>
+        <button id="login-btn" class="link-button" onclick="lobbyManager.showLoginForm()">Login</button>
       </div>
 
       <!-- Sign Up Form -->
@@ -265,8 +265,8 @@
     <div id="join-create-game" class="card" style="display: none;">
       <h2>Welcome, <span id="username"></span>!</h2>
       <div class="btn-group">
-        <button class="btn" onclick="lobbyManager.joinOrCreateRandomGame()">Quick Join</button>
-        <button class="btn" onclick="lobbyManager.createPrivateGame()">Create Private Game</button>
+        <button id="quick-join-btn" class="btn" onclick="lobbyManager.joinOrCreateRandomGame()">Quick Join</button>
+        <button id="create-private-game-btn" class="btn" onclick="lobbyManager.createPrivateGame()">Create Private Game</button>
       </div>
       <div class="auth-options" style="margin-top: 20px;">
         <button id="save-progress-btn" class="link-button" onclick="lobbyManager.showUpgradeForm()">Save
